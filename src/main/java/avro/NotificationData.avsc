@@ -1,0 +1,39 @@
+{
+    "fields": [
+        {
+            "default": null,
+            "name": "chaining_id",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "channel_id",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "status",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "list_invoice_error_json",
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    ],
+    "name": "NotificationData",
+    "namespace": "bca.mbb.scf.avro",
+    "type": "record"
+}

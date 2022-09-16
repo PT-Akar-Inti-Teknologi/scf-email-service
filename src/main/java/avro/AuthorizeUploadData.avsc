@@ -1,0 +1,10 @@
+{
+  "namespace": "bca.mbb.scf.avro",
+  "type": "record",
+  "name": "AuthorizeUploadData",
+  "fields": [
+    {"name": "fo_transaction_header_id", "type": [ "null", "string" ], "default": null},
+    {"name": "user", "type": [ "null", "string" ], "default": null},
+    {"name": "chaining_id", "type": [ "null", "string" ], "default": null}
+  ]
+}

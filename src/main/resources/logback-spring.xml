@@ -1,0 +1,33 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-}|%X{spanId:-}|%X{parentSpanId:-}|%X{IDENTIFIER:-}] - %msg%replace(%xException){'[\r\n]','~~'}%nopex%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <springProfile name="local | dev | !(uat | prod)">
+        <logger name="org.springframework" level="INFO" />
+        <logger name="com.zaxxer" level="INFO" />
+        <logger name="org.flywaydb" level="INFO" />
+        <logger name="org.hibernate" level="INFO" />
+        <logger name="feign" level="INFO" />
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT" />
+        </root>
+    </springProfile>
+
+    <springProfile name="uat | prod">
+        <logger name="org.springframework" level="ERROR" />
+        <logger name="com.zaxxer" level="ERROR" />
+        <logger name="org.flywaydb" level="OFF" />
+        <logger name="org.hibernate" level="ERROR" />
+        <logger name="feign" level="INFO" />
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT" />
+        </root>
+    </springProfile>
+</configuration>

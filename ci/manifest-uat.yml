@@ -1,0 +1,17 @@
+applications:
+  - name: mbb-service-skeleton
+    memory: 1G
+    health-check-type: process
+    buildpacks:
+      - java_buildpack_offline
+    path: ../build/libs/fo-upload-consumer.jar
+    routes:
+      - route: mybcabisnis-service-skeleton-uat.apps.pcf.dti.co.id
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+}}'
+      JAVA_OPTS: -Duser.timezone=Asia/Jakarta
+      SPRING_PROFILES_ACTIVE: 'uat'
+    services:
+      - ELK-MYBCABISNIS
+      - mbb-dynatrace
+      - mbb-apps-config
