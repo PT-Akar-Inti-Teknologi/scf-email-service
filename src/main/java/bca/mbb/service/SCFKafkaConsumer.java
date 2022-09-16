@@ -4,6 +4,7 @@ import bca.mbb.api.MessagingService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.InvoiceError;
+import bca.mbb.dto.OthersToFoundationDto;
 import bca.mbb.dto.TransactionDetailDto;
 import bca.mbb.dto.TransactionHeaderDto;
 import bca.mbb.entity.FoInvoiceErrorDetailEntity;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.mybcabisnis.approvalworkflowbulk.kafka.avro.TransactionBulk;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.BeanUtils;
@@ -46,13 +48,19 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class SCFKafkaConsumer {
 
-    @Value("${channel-id}") private String channelId;
-    @Value("${ws-id}") private String wsId;
-    @Value("${success-code}") private String successCode;
-    @Value("${cutoff-code}") private String errorCutoffCode;
+    @Value("${channel-id}")
+    private String channelId;
+    @Value("${ws-id}")
+    private String wsId;
+    @Value("${success-code}")
+    private String successCode;
+    @Value("${cutoff-code}")
+    private String errorCutoffCode;
     private final UploadInvoiceClient uploadInvoiceClient;
-
-    @Value("${app.kafka.topic.core-transaction}")   private String transactionDataTopic;
+    @Value("${app.kafka.topic.others-to-foundation-bulk}")
+    private String othersToFoundation;
+    @Value("${app.kafka.topic.core-transaction}")
+    private String transactionDataTopic;
 
     private final FoInvoiceErrorDetailRepository foInvoiceErrorDetailRepository;
     private final FoTransactionHeaderRepository foTransactionHeaderRepository;
@@ -157,6 +165,22 @@ public class SCFKafkaConsumer {
                 foInvoiceErrorDetailRepository.save(boDetailError);
             }
         }
+
+        var othersToTransaction = new OthersToFoundationDto();
+        othersToTransaction.setUserId("TINA");
+        othersToTransaction.setCorpId(foTransactionHeader.getCorporateCode());
+        othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
+        othersToTransaction.setStreamTransactionId(foTransactionHeader.getChainingId());
+        othersToTransaction.setTransactionAmount(String.valueOf(foTransactionHeader.getTotalAmount()));
+        othersToTransaction.setTransactionCurrency(foTransactionHeader.getCurrency());
+        othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
+        othersToTransaction.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks() + " – " + foTransactionHeader.getTotalRecord()+ " Record");
+        othersToTransaction.setTransactionEffectiveDate(foTransactionHeader.getEffectiveDate());
+        othersToTransaction.setRejectCancelReason(foTransactionHeader.getReason());
+
+        messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
+                .setTransactionJSON(mapper.writeValueAsString(othersToTransaction))
+                .build());
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
