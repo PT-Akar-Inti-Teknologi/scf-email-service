@@ -102,6 +102,23 @@ public class SCFKafkaConsumer {
             }
 
             foTransactionHeaderRepository.save(header);
+
+            var othersToTransaction = new OthersToFoundationDto();
+//            othersToTransaction.setUserId();
+            othersToTransaction.setCorpId(header.getCorporateCode());
+            othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
+            othersToTransaction.setStreamTransactionId(header.getChainingId());
+            othersToTransaction.setTransactionAmount(String.valueOf(header.getTotalAmount()));
+            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
+            othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
+            othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
+            othersToTransaction.setTransactionDetails((header.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + header.getRemarks() + " – " + header.getTotalRecord()+ " Record");
+            othersToTransaction.setTransactionEffectiveDate(header.getEffectiveDate());
+            othersToTransaction.setRejectCancelReason(header.getReason());
+
+            messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
+                    .setTransactionJSON(mapper.writeValueAsString(othersToTransaction))
+                    .build());
         }
     }
 
@@ -165,23 +182,6 @@ public class SCFKafkaConsumer {
                 foInvoiceErrorDetailRepository.save(boDetailError);
             }
         }
-
-        var othersToTransaction = new OthersToFoundationDto();
-        othersToTransaction.setUserId(message.getUser());
-        othersToTransaction.setCorpId(foTransactionHeader.getCorporateCode());
-        othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
-        othersToTransaction.setStreamTransactionId(foTransactionHeader.getChainingId());
-        othersToTransaction.setTransactionAmount(String.valueOf(foTransactionHeader.getTotalAmount()));
-        var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
-        othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
-        othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
-        othersToTransaction.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks() + " – " + foTransactionHeader.getTotalRecord()+ " Record");
-        othersToTransaction.setTransactionEffectiveDate(foTransactionHeader.getEffectiveDate());
-        othersToTransaction.setRejectCancelReason(foTransactionHeader.getReason());
-
-        messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
-                .setTransactionJSON(mapper.writeValueAsString(othersToTransaction))
-                .build());
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
