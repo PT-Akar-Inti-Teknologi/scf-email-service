@@ -167,12 +167,13 @@ public class SCFKafkaConsumer {
         }
 
         var othersToTransaction = new OthersToFoundationDto();
-        othersToTransaction.setUserId("TINA");
+        othersToTransaction.setUserId(message.getUser());
         othersToTransaction.setCorpId(foTransactionHeader.getCorporateCode());
         othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
         othersToTransaction.setStreamTransactionId(foTransactionHeader.getChainingId());
         othersToTransaction.setTransactionAmount(String.valueOf(foTransactionHeader.getTotalAmount()));
-        othersToTransaction.setTransactionCurrency(foTransactionHeader.getCurrency());
+        var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
+        othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
         othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
         othersToTransaction.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks() + " – " + foTransactionHeader.getTotalRecord()+ " Record");
         othersToTransaction.setTransactionEffectiveDate(foTransactionHeader.getEffectiveDate());
