@@ -108,7 +108,7 @@ public class SCFKafkaConsumer {
             othersToTransaction.setCorpId(header.getCorporateCode());
             othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
             othersToTransaction.setStreamTransactionId(header.getChainingId());
-            othersToTransaction.setTransactionAmount(String.valueOf(header.getTotalAmount()));
+            othersToTransaction.setTransactionAmount(header.getTotalAmount());
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
             othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
             othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
