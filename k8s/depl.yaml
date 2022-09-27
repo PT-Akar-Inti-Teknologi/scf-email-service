@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fo-upld-cons-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mbb
+      service: fo-upld-cons
+  template:
+    metadata:
+      labels:
+        app: mbb
+        service: fo-upld-cons
+        sidecar.istio.io/inject: "true"
+        version: "1"
+    spec:
+      imagePullSecrets:
+        - name: registry-secret
+      containers:
+      - name: fo-upld-cons
+        image: ait-cr.akarinti.tech/fo-upld-cons
+        # resources:
+        #   limits:
+        #     memory: "128Mi"
+        #     cpu: "500m"
+        ports:
+          - name: fo-upld-cons
+            protocol: TCP
+            containerPort: 18081
+        envFrom:
+          - configMapRef:
+              name: fo-upld-cons-config
+        #readinessProbe:
+        #  httpGet:
+        #    path: /
+        #    port: 3000
+        #  initialDelaySeconds: 3
+        #  periodSeconds: 3
+        #  failureThreshold: 2

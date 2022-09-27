@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fo-upld-cons-svc
+  labels:
+    app: mbb
+    service: fo-upld-cons
+spec:
+  selector:
+    app: mbb
+    service: fo-upld-cons
+  ports:
+    - name: http-port
+      port: 18081
+      protocol: TCP
+      targetPort: 9012
