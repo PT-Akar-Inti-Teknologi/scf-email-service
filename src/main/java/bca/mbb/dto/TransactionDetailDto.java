@@ -79,4 +79,5 @@ public class TransactionDetailDto {
     private LocalDateTime updatedDate;
     private String settlementType;
 
+    private String transactionReferenceNumber;
 }
