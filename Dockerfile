@@ -13,4 +13,4 @@ RUN mkdir /app
 
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/spring-boot-application.jar
 
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Djava.security.egd=file:/dev/./urandom","-jar","/app/spring-boot-application.jar","--spring.profiles.active=local,common"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Djava.security.egd=file:/dev/./urandom","-jar","/app/spring-boot-application.jar","--spring.profiles.active=production,comprod"]
