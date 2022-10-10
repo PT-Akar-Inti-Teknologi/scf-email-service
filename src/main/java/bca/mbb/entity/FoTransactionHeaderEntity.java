@@ -167,6 +167,10 @@ public class FoTransactionHeaderEntity {
     @Column(name = "INPUT_TENOR_BY_USER")
     private String inputTenorByUser;
 
+    @Column(name = "WORKFLOW_FAILURE", length = 20)
+    @Enumerated(EnumType.STRING)
+    private StatusEnum workflowFailure;
+
     @PrePersist
     private void onCreate() {
         if (this.getAsyncronousTransfer() == null) {

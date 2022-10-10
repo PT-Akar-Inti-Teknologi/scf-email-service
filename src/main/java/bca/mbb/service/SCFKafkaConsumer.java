@@ -4,9 +4,9 @@ import bca.mbb.api.MessagingService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.OthersToFoundationDto;
 import bca.mbb.dto.TransactionDetailDto;
 import bca.mbb.dto.TransactionHeaderDto;
+import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import bca.mbb.entity.FoInvoiceErrorDetailEntity;
 import bca.mbb.entity.FoTransactionDetailEntity;
 import bca.mbb.entity.FoTransactionHeaderEntity;
@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -72,6 +73,7 @@ public class SCFKafkaConsumer {
 
     private static final String CORE_CHANNEL = "CORE-SCF";
     private static final String USER_SYSTEM = "SYSTEM";
+    private static final String LOAN_UPLOAD_INVOICE = "LOAN_UPLOAD_INVOICE";
 
     @KafkaListener(topics = "#{'${app.kafka.topic.notification}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-notification}'}", containerFactory = "validateDoneListener")
     public void validateDoneListen(NotificationData message) throws JsonProcessingException {
@@ -103,22 +105,7 @@ public class SCFKafkaConsumer {
 
             foTransactionHeaderRepository.save(header);
 
-            var othersToTransaction = new OthersToFoundationDto();
-//            othersToTransaction.setUserId();
-            othersToTransaction.setCorpId(header.getCorporateCode());
-            othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
-            othersToTransaction.setStreamTransactionId(header.getChainingId());
-            othersToTransaction.setTransactionAmount(header.getTotalAmount());
-            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
-            othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
-            othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
-            othersToTransaction.setTransactionDetails((header.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + header.getRemarks() + " – " + header.getTotalRecord()+ " Record");
-            othersToTransaction.setTransactionEffectiveDate(header.getEffectiveDate());
-            othersToTransaction.setRejectCancelReason(header.getReason());
-
-            messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
-                    .setTransactionJSON(mapper.writeValueAsString(othersToTransaction))
-                    .build());
+            othersToFoundationKafkaUpdate(header);
         }
     }
 
@@ -172,16 +159,18 @@ public class SCFKafkaConsumer {
             if(response.getErrorCode().equalsIgnoreCase(errorCutoffCode)){
                 var totalRecords = foTransactionDetail.size() + 1;
 
-                var boDetailError = new FoInvoiceErrorDetailEntity();
-                boDetailError.setFoInvoiceErrorDetailId(CommonUtil.uuid());
-                boDetailError.setErrorCode(response.getErrorCode());
-                boDetailError.setErrorDescriptionEng(response.getErrorMessageEn());
-                boDetailError.setErrorDescriptionInd(response.getErrorMessageInd());
-                boDetailError.setChainingId(foTransactionHeader.getChainingId());
-                boDetailError.setLine(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(",")));
-                foInvoiceErrorDetailRepository.save(boDetailError);
+                var foDetailError = new FoInvoiceErrorDetailEntity();
+                foDetailError.setFoInvoiceErrorDetailId(CommonUtil.uuid());
+                foDetailError.setErrorCode(response.getErrorCode());
+                foDetailError.setErrorDescriptionEng(response.getErrorMessageEn());
+                foDetailError.setErrorDescriptionInd(response.getErrorMessageInd());
+                foDetailError.setChainingId(foTransactionHeader.getChainingId());
+                foDetailError.setLine(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(",")));
+                foInvoiceErrorDetailRepository.save(foDetailError);
             }
         }
+
+        othersToFoundationKafkaUpdate(foTransactionHeader);
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
@@ -302,5 +291,30 @@ public class SCFKafkaConsumer {
             messagingService.sendMessage(transactionDataTopic, message);
         }
 
+    }
+
+    private void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader) throws JsonProcessingException {
+        try {
+            var othersToFoundationUpdate = new FoundationKafkaBulkUpdateDto();
+            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
+//            othersToFoundationUpdate.setUserId();
+            othersToFoundationUpdate.setCorpId(foTransactionHeader.getCorporateCode());
+            othersToFoundationUpdate.setTransactionType(LOAN_UPLOAD_INVOICE);
+            othersToFoundationUpdate.setStreamTransactionId(foTransactionHeader.getChainingId());
+            othersToFoundationUpdate.setTransactionAmount(foTransactionHeader.getTotalAmount());
+            othersToFoundationUpdate.setTransactionCurrency(currency == null ? null : currency);
+            othersToFoundationUpdate.setTransactionStatus(foTransactionHeader.getStatus().name());
+            othersToFoundationUpdate.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks());
+            othersToFoundationUpdate.setTransactionEffectiveDate(foTransactionHeader.getEffectiveDate());
+            othersToFoundationUpdate.setRejectCancelReason(foTransactionHeader.getReason());
+
+            messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
+                    .setTransactionJSON(mapper.writeValueAsString(othersToFoundationUpdate))
+                    .build());
+        } catch (Exception e) {
+            foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
+            foTransactionHeader.setUpdatedDate(LocalDateTime.now());
+            foTransactionHeaderRepository.save(foTransactionHeader);
+        }
     }
 }
