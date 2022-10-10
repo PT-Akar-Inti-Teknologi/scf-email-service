@@ -92,15 +92,13 @@ public class SCFKafkaConsumer {
                 });
 
                 listError.forEach(error -> {
-                    var boInvoiceErrorDetail = new FoInvoiceErrorDetailEntity();
-                    boInvoiceErrorDetail.setFoInvoiceErrorDetailId(CommonUtil.uuid());
-                    boInvoiceErrorDetail.setChainingId(message.getChainingId());
-                    boInvoiceErrorDetail.setErrorCode(error.getErrorCode());
-                    boInvoiceErrorDetail.setErrorDescriptionEng(error.getErrorDescEng());
-                    boInvoiceErrorDetail.setErrorDescriptionInd(error.getErrorDescInd());
-                    boInvoiceErrorDetail.setLine(error.getLine());
-
-                    foInvoiceErrorDetailRepository.save(boInvoiceErrorDetail);
+                    foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
+                            .foInvoiceErrorDetailId(CommonUtil.uuid())
+                            .chainingId(message.getChainingId())
+                            .errorCode(error.getErrorCode())
+                            .errorDescriptionEng(error.getErrorDescEng())
+                            .errorDescriptionInd(error.getErrorDescInd())
+                            .line(error.getLine()).build());
                 });
             }
 
@@ -160,14 +158,13 @@ public class SCFKafkaConsumer {
             if(response.getErrorCode().equalsIgnoreCase(errorCutoffCode)){
                 var totalRecords = foTransactionDetail.size() + 1;
 
-                var foDetailError = new FoInvoiceErrorDetailEntity();
-                foDetailError.setFoInvoiceErrorDetailId(CommonUtil.uuid());
-                foDetailError.setErrorCode(response.getErrorCode());
-                foDetailError.setErrorDescriptionEng(response.getErrorMessageEn());
-                foDetailError.setErrorDescriptionInd(response.getErrorMessageInd());
-                foDetailError.setChainingId(foTransactionHeader.getChainingId());
-                foDetailError.setLine(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(",")));
-                foInvoiceErrorDetailRepository.save(foDetailError);
+                foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
+                        .foInvoiceErrorDetailId(CommonUtil.uuid())
+                        .errorCode(response.getErrorCode())
+                        .errorDescriptionEng(response.getErrorMessageEn())
+                        .errorDescriptionInd(response.getErrorMessageInd())
+                        .chainingId(foTransactionHeader.getChainingId())
+                        .line(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(","))).build());
             }
         }
 

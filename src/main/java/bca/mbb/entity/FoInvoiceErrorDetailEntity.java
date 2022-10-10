@@ -1,7 +1,10 @@
 package bca.mbb.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.Column;
@@ -14,6 +17,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "FO_INVOICE_ERROR_DETAIL")
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class FoInvoiceErrorDetailEntity {
     @Id
     @Column(name = "FO_INVOICE_ERROR_DETAIL_ID", nullable = false, length = 32)
