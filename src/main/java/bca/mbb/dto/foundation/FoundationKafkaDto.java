@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+@Data
 @SuperBuilder
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class FoundationKafkaDto {
