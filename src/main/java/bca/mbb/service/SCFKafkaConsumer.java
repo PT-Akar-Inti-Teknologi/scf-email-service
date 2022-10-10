@@ -4,12 +4,13 @@ import bca.mbb.api.MessagingService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.OthersToFoundationDto;
 import bca.mbb.dto.TransactionDetailDto;
 import bca.mbb.dto.TransactionHeaderDto;
+import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import bca.mbb.entity.FoInvoiceErrorDetailEntity;
 import bca.mbb.entity.FoTransactionDetailEntity;
 import bca.mbb.entity.FoTransactionHeaderEntity;
+import bca.mbb.enums.ActionEnum;
 import bca.mbb.enums.StatusEnum;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -72,14 +74,15 @@ public class SCFKafkaConsumer {
 
     private static final String CORE_CHANNEL = "CORE-SCF";
     private static final String USER_SYSTEM = "SYSTEM";
+    private static final String LOAN_UPLOAD_INVOICE = "LOAN_UPLOAD_INVOICE";
 
     @KafkaListener(topics = "#{'${app.kafka.topic.notification}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-notification}'}", containerFactory = "validateDoneListener")
     public void validateDoneListen(NotificationData message) throws JsonProcessingException {
         if(message.getChannelId().equalsIgnoreCase(channelId)) {
 
-            var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), "UPLOAD_INVOICE");
+            var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), ActionEnum.UPLOAD_INVOICE.name());
 
-            if (message.getStatus().equalsIgnoreCase("SUCCESS")) {
+            if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
                 header.setStatus(StatusEnum.SUCCESS);
             } else {
                 header.setStatus(StatusEnum.FAILED);
@@ -89,36 +92,19 @@ public class SCFKafkaConsumer {
                 });
 
                 listError.forEach(error -> {
-                    var boInvoiceErrorDetail = new FoInvoiceErrorDetailEntity();
-                    boInvoiceErrorDetail.setFoInvoiceErrorDetailId(CommonUtil.uuid());
-                    boInvoiceErrorDetail.setChainingId(message.getChainingId());
-                    boInvoiceErrorDetail.setErrorCode(error.getErrorCode());
-                    boInvoiceErrorDetail.setErrorDescriptionEng(error.getErrorDescEng());
-                    boInvoiceErrorDetail.setErrorDescriptionInd(error.getErrorDescInd());
-                    boInvoiceErrorDetail.setLine(error.getLine());
-
-                    foInvoiceErrorDetailRepository.save(boInvoiceErrorDetail);
+                    foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
+                            .foInvoiceErrorDetailId(CommonUtil.uuid())
+                            .chainingId(message.getChainingId())
+                            .errorCode(error.getErrorCode())
+                            .errorDescriptionEng(error.getErrorDescEng())
+                            .errorDescriptionInd(error.getErrorDescInd())
+                            .line(error.getLine()).build());
                 });
             }
 
             foTransactionHeaderRepository.save(header);
 
-            var othersToTransaction = new OthersToFoundationDto();
-//            othersToTransaction.setUserId();
-            othersToTransaction.setCorpId(header.getCorporateCode());
-            othersToTransaction.setTransactionType("LOAN_UPLOAD_INVOICE");
-            othersToTransaction.setStreamTransactionId(header.getChainingId());
-            othersToTransaction.setTransactionAmount(header.getTotalAmount());
-            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
-            othersToTransaction.setTransactionCurrency(currency.isEmpty() ? null : currency.get(0));
-            othersToTransaction.setTransactionStatus(StatusEnum.SUCCESS.toString());
-            othersToTransaction.setTransactionDetails((header.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus") +" – " + header.getRemarks() + " – " + header.getTotalRecord()+ " Record");
-            othersToTransaction.setTransactionEffectiveDate(header.getEffectiveDate());
-            othersToTransaction.setRejectCancelReason(header.getReason());
-
-            messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
-                    .setTransactionJSON(mapper.writeValueAsString(othersToTransaction))
-                    .build());
+            othersToFoundationKafkaUpdate(header);
         }
     }
 
@@ -130,7 +116,7 @@ public class SCFKafkaConsumer {
         var formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         var file = File.createTempFile(filename, ".txt");
         var printStream = new PrintStream(file);
-        var transactionType = foTransactionHeader.getTransactionType().equalsIgnoreCase("ADD") ? "Tambah" : "Hapus";
+        var transactionType = foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? "Tambah" : "Hapus";
 
         printStream.print("0|" + transactionType + "|||" + foTransactionHeader.getCorporateCode() + "|" + (foTransactionHeader.getFileHeaderId() != null ? foTransactionHeader.getFileHeaderId() : "") + "|||||||||||||||||" + "\n");
 
@@ -172,16 +158,17 @@ public class SCFKafkaConsumer {
             if(response.getErrorCode().equalsIgnoreCase(errorCutoffCode)){
                 var totalRecords = foTransactionDetail.size() + 1;
 
-                var boDetailError = new FoInvoiceErrorDetailEntity();
-                boDetailError.setFoInvoiceErrorDetailId(CommonUtil.uuid());
-                boDetailError.setErrorCode(response.getErrorCode());
-                boDetailError.setErrorDescriptionEng(response.getErrorMessageEn());
-                boDetailError.setErrorDescriptionInd(response.getErrorMessageInd());
-                boDetailError.setChainingId(foTransactionHeader.getChainingId());
-                boDetailError.setLine(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(",")));
-                foInvoiceErrorDetailRepository.save(boDetailError);
+                foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
+                        .foInvoiceErrorDetailId(CommonUtil.uuid())
+                        .errorCode(response.getErrorCode())
+                        .errorDescriptionEng(response.getErrorMessageEn())
+                        .errorDescriptionInd(response.getErrorMessageInd())
+                        .chainingId(foTransactionHeader.getChainingId())
+                        .line(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(","))).build());
             }
         }
+
+        othersToFoundationKafkaUpdate(foTransactionHeader);
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
@@ -194,11 +181,11 @@ public class SCFKafkaConsumer {
 
             var prefix = "";
 
-            if(message.getTransactionType().equalsIgnoreCase("REQUEST_FINANCE")){
+            if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name())){
                 prefix = "REQ";
             }
 
-            if(message.getTransactionType().equalsIgnoreCase("RESERVE_LIMIT")){
+            if(message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())){
                 prefix = "RL";
             }
 
@@ -247,12 +234,12 @@ public class SCFKafkaConsumer {
         }
     }
 
-    private void createTransactionDetail(TransactionDetailDto transactionDetail, FoTransactionDetailEntity boTransactionDetail, String prefix, TransactionData message) throws JsonProcessingException {
-        if(boTransactionDetail == null && transactionDetail.getChannelReferenceNumber() != null){
-            boTransactionDetail = foTransactionDetailRepository.findByReferenceNumber(transactionDetail.getChannelReferenceNumber());
+    private void createTransactionDetail(TransactionDetailDto transactionDetail, FoTransactionDetailEntity foTransactionDetail, String prefix, TransactionData message) throws JsonProcessingException {
+        if(foTransactionDetail == null && transactionDetail.getChannelReferenceNumber() != null){
+            foTransactionDetail = foTransactionDetailRepository.findByReferenceNumber(transactionDetail.getChannelReferenceNumber());
         }
 
-        if(boTransactionDetail == null) {
+        if(foTransactionDetail == null) {
             var foTransactionHeader = foTransactionHeaderRepository.findByTransactionHeaderId(transactionDetail.getTransactionHeaderId());
             var referenceNUmber = foTransactionHeader.getReferenceNumber();
 
@@ -260,39 +247,39 @@ public class SCFKafkaConsumer {
                 referenceNUmber = foTransactionHeaderRepository.getChannelRefnoSequence(prefix);
             }
 
-            boTransactionDetail = new FoTransactionDetailEntity();
-            boTransactionDetail.setFoTransactionHeaderId(foTransactionHeader.getFoTransactionHeaderId());
-            boTransactionDetail.setReferenceNumber(referenceNUmber);
-            transactionDetail.setChannelReferenceNumber(boTransactionDetail.getReferenceNumber());
+            foTransactionDetail = new FoTransactionDetailEntity();
+            foTransactionDetail.setFoTransactionHeaderId(foTransactionHeader.getFoTransactionHeaderId());
+            foTransactionDetail.setReferenceNumber(referenceNUmber);
+            transactionDetail.setChannelReferenceNumber(foTransactionDetail.getReferenceNumber());
 
             if(foTransactionHeader.getFinanceTenor() == null || !foTransactionHeader.getFinanceTenor().equals(transactionDetail.getTenorValue())) {
                 foTransactionHeader.setFinanceTenor(transactionDetail.getTenorValue());
             }
 
-            BeanUtils.copyProperties(transactionDetail, boTransactionDetail);
-            boTransactionDetail.setReason(transactionDetail.getFailedReason());
-            foTransactionDetailRepository.save(boTransactionDetail);
+            BeanUtils.copyProperties(transactionDetail, foTransactionDetail);
+            foTransactionDetail.setReason(transactionDetail.getFailedReason());
+            foTransactionDetailRepository.save(foTransactionDetail);
 
             sendTransactionData(message, message.getEntityName(), mapper.writeValueAsString(transactionDetail));
         }
         else {
-            boTransactionDetail.setReason(transactionDetail.getFailedReason());
+            foTransactionDetail.setReason(transactionDetail.getFailedReason());
 
             if(transactionDetail.getChannelReferenceNumber().contains("RFN")){
-                boTransactionDetail.setRepaymentAmount(transactionDetail.getTransactionAmount());
+                foTransactionDetail.setRepaymentAmount(transactionDetail.getTransactionAmount());
             }
             else if(transactionDetail.getChannelReferenceNumber().contains("PIN") && transactionDetail.getProductCode().equalsIgnoreCase("refact")){
-                boTransactionDetail.setPaymentAmount(transactionDetail.getTransactionAmount());
+                foTransactionDetail.setPaymentAmount(transactionDetail.getTransactionAmount());
             }
 
-            BeanUtils.copyProperties(transactionDetail, boTransactionDetail, CommonUtil.getNullPropertyNames(transactionDetail));
-            foTransactionDetailRepository.save(boTransactionDetail);
+            BeanUtils.copyProperties(transactionDetail, foTransactionDetail, CommonUtil.getNullPropertyNames(transactionDetail));
+            foTransactionDetailRepository.save(foTransactionDetail);
         }
     }
 
     private void sendTransactionData(TransactionData message, String entityName, String entityAsString){
 
-        if(message.getTransactionType().equalsIgnoreCase("REQUEST_FINANCE") || message.getTransactionType().equalsIgnoreCase("RESERVE_LIMIT")) {
+        if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name()) || message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())) {
 
             message = TransactionData.newBuilder()
                     .setChannelId(CORE_CHANNEL)
@@ -302,5 +289,28 @@ public class SCFKafkaConsumer {
             messagingService.sendMessage(transactionDataTopic, message);
         }
 
+    }
+
+    private void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader) {
+        try {
+            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
+
+            messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
+                    .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaBulkUpdateDto.builder().corpId(foTransactionHeader.getCorporateCode())
+//                                    .userId()
+                            .transactionType(LOAN_UPLOAD_INVOICE)
+                            .streamTransactionId(foTransactionHeader.getChainingId())
+                            .transactionAmount(foTransactionHeader.getTotalAmount())
+                            .transactionCurrency(currency == null ? null : currency)
+                            .transactionStatus(foTransactionHeader.getStatus().name())
+                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks())
+                            .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
+                            .rejectCancelReason(foTransactionHeader.getReason())))
+                    .build());
+        } catch (Exception e) {
+            foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
+            foTransactionHeader.setUpdatedDate(LocalDateTime.now());
+            foTransactionHeaderRepository.save(foTransactionHeader);
+        }
     }
 }

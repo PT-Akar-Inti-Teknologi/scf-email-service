@@ -18,5 +18,5 @@ public interface FoTransactionDetailRepository extends JpaRepository<FoTransacti
     FoTransactionDetailEntity findByReferenceNumber(String referenceNumber);
 
     @Query("select distinct p.currency from FoTransactionDetailEntity p where p.foTransactionHeaderId = :transactionHeaderId")
-    List<String> getCurrencyByFoTransactionId(String transactionHeaderId);
+    String getCurrencyByFoTransactionId(String transactionHeaderId);
 }
