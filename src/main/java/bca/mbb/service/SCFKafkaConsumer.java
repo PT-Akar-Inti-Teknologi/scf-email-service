@@ -305,9 +305,10 @@ public class SCFKafkaConsumer {
                             .transactionStatus(foTransactionHeader.getStatus().name())
                             .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks())
                             .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
-                            .rejectCancelReason(foTransactionHeader.getReason())))
+                            .rejectCancelReason(foTransactionHeader.getReason()).build()))
                     .build());
         } catch (Exception e) {
+            e.printStackTrace();
             foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
             foTransactionHeader.setUpdatedDate(LocalDateTime.now());
             foTransactionHeaderRepository.save(foTransactionHeader);

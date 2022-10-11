@@ -10,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Data
 @SuperBuilder
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class FoundationKafkaBulkUpdateDto extends FoundationKafkaDto {
