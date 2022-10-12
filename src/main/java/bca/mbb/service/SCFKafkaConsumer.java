@@ -1,12 +1,14 @@
 package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
+import bca.mbb.clients.DevSimulationClient;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.dto.TransactionDetailDto;
 import bca.mbb.dto.TransactionHeaderDto;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
+import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.entity.FoInvoiceErrorDetailEntity;
 import bca.mbb.entity.FoTransactionDetailEntity;
 import bca.mbb.entity.FoTransactionHeaderEntity;
@@ -71,6 +73,7 @@ public class SCFKafkaConsumer {
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private final DevSimulationClient devSimulationClient;
 
     private static final String CORE_CHANNEL = "CORE-SCF";
     private static final String USER_SYSTEM = "SYSTEM";
@@ -104,7 +107,7 @@ public class SCFKafkaConsumer {
 
             foTransactionHeaderRepository.save(header);
 
-            othersToFoundationKafkaUpdate(header);
+            othersToFoundationKafkaUpdate(header, null);
         }
     }
 
@@ -168,7 +171,9 @@ public class SCFKafkaConsumer {
             }
         }
 
-        othersToFoundationKafkaUpdate(foTransactionHeader);
+        othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
+
+        setAuthorizedFoundation(foTransactionHeader.getChainingId(), UserDetailsDto.builder().corpId(foTransactionHeader.getCorporateCode()).userId(message.getUser()).build());
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
@@ -291,13 +296,13 @@ public class SCFKafkaConsumer {
 
     }
 
-    private void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader) {
+    private void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
         try {
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
 
             messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
                     .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaBulkUpdateDto.builder().corpId(foTransactionHeader.getCorporateCode())
-//                                    .userId()
+                            .userId(userId)
                             .transactionType(LOAN_UPLOAD_INVOICE)
                             .streamTransactionId(foTransactionHeader.getChainingId())
                             .transactionAmount(foTransactionHeader.getTotalAmount())
@@ -307,11 +312,19 @@ public class SCFKafkaConsumer {
                             .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
                             .rejectCancelReason(foTransactionHeader.getReason()).build()))
                     .build());
+            if (foTransactionHeader.getWorkflowFailure() != null) {
+                foTransactionHeader.setWorkflowFailure(null);
+                foTransactionHeaderRepository.save(foTransactionHeader);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
             foTransactionHeader.setUpdatedDate(LocalDateTime.now());
             foTransactionHeaderRepository.save(foTransactionHeader);
         }
+    }
+
+    private void setAuthorizedFoundation(String transactionStreamId, UserDetailsDto userDetailsDto) throws JsonProcessingException {
+        devSimulationClient.transactionDetailHistoryAuthorize(mapper.writeValueAsString(userDetailsDto), transactionStreamId);
     }
 }
