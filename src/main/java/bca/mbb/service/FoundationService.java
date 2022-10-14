@@ -2,6 +2,7 @@ package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
 import bca.mbb.clients.FoundationExternalClient;
+import bca.mbb.config.ApplicationConfiguration;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.entity.FoTransactionHeaderEntity;
@@ -9,7 +10,7 @@ import bca.mbb.enums.ActionEnum;
 import bca.mbb.enums.StatusEnum;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
-import bca.mbb.scf.avro.TransactionData;
+import bca.mbb.util.CommonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,15 +33,14 @@ public class FoundationService {
 
     @Value("${app.kafka.topic.others-to-foundation-bulk}")
     private String othersToFoundation;
-
     private final FoTransactionHeaderRepository foTransactionHeaderRepository;
     private final FoTransactionDetailRepository foTransactionDetailRepository;
     private final FoundationExternalClient foundationExternalClient;
-    private static final String LOAN_UPLOAD_INVOICE = "LOAN_UPLOAD_INVOICE";
     private final MessagingService<SpecificRecordBase> messagingService;
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private final ApplicationConfiguration appConfiguration;
 
     public void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
         try {
@@ -49,12 +49,12 @@ public class FoundationService {
             messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
                     .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaBulkUpdateDto.builder().corpId(foTransactionHeader.getCorporateCode())
                             .userId(userId)
-                            .transactionType(LOAN_UPLOAD_INVOICE)
+                            .transactionType(appConfiguration.LOAN_UPLOAD_INVOICE)
                             .streamTransactionId(foTransactionHeader.getChainingId())
                             .transactionAmount(foTransactionHeader.getTotalAmount())
-                            .transactionCurrency(currency == null ? null : currency)
+                            .transactionCurrency(CommonUtil.isNullOrEmpty(currency) ? null : currency)
                             .transactionStatus(foTransactionHeader.getStatus().name())
-                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? "Tambah" : "Hapus") +" – " + foTransactionHeader.getRemarks())
+                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? appConfiguration.add_description : appConfiguration.delete_description) +" – " + foTransactionHeader.getRemarks())
                             .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
                             .rejectCancelReason(foTransactionHeader.getReason()).build()))
                     .build());
