@@ -137,14 +137,8 @@ public class FoTransactionHeaderEntity {
     @Column(name = "REQUESTED_BY", length = 50)
     private String requestedBy;
 
-    @Column(name = "AUTHORIZED_BY", length = 50)
-    private String authorizedBy;
-
     @Column(name = "REQUESTED_DATE")
     private LocalDateTime requestedDate;
-
-    @Column(name = "AUTHORIZED_DATE")
-    private LocalDateTime authorizedDate;
 
     @PastOrPresent
     @JsonProperty(value = "created_date")
