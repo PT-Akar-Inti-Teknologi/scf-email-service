@@ -215,9 +215,7 @@ public class SCFKafkaConsumer {
             transactionHeader.setChannelReferenceNumber(foTransactionHeader.getReferenceNumber());
 
             foTransactionHeader.setRequestedBy(USER_SYSTEM);
-            foTransactionHeader.setAuthorizedBy(USER_SYSTEM);
             foTransactionHeader.setRequestedDate(transactionHeader.getExecutedDate());
-            foTransactionHeader.setAuthorizedDate(transactionHeader.getExecutedDate());
 
             BeanUtils.copyProperties(transactionHeader, foTransactionHeader);
             foTransactionHeader.setReason(transactionHeader.getFailedReason());
