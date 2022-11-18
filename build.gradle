@@ -70,6 +70,7 @@ dependencies {
     compile files('lib\\bca.core\\core-lib\\1.1.1\\3d560d16b21ced905379b4040c8a48ca6bf6697f\\core-lib-1.1.0.jar')
     compile files('lib\\mbb-common-lib-1.2.0.jar')
     compile files('lib\\bca.core\\core-lib\\1.1.1\\3d560d16b21ced905379b4040c8a48ca6bf6697f\\core-lib-1.2.0.jar')
+    compile files('lib\\bca.mbbentity.lib.fo-1.0-plain.jar')
 
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

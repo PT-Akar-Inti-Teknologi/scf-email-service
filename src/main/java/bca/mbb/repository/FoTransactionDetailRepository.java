@@ -1,6 +1,6 @@
 package bca.mbb.repository;
 
-import bca.mbb.entity.FoTransactionDetailEntity;
+import lib.fo.entity.FoTransactionDetailEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

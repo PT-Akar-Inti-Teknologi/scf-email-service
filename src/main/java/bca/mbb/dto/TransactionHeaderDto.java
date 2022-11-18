@@ -1,10 +1,10 @@
 package bca.mbb.dto;
 
-import bca.mbb.enums.StatusEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lib.fo.enums.StatusEnum;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -19,7 +19,7 @@ public class TransactionHeaderDto {
     private String transactionHeaderId;
     private String chainingId;
     private String wsId;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate effectiveDate;
     private String primaryPartyType;
     private String primaryPartyCode;
@@ -34,7 +34,7 @@ public class TransactionHeaderDto {
     private String fileName;
     private String fileReference;
     private String fileType;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime fileGenerationDate;
     private String remarks;
     private String channelReferenceNumber;
@@ -54,13 +54,12 @@ public class TransactionHeaderDto {
     private String asyncronousTransfer;
     private String isInvalid;
     private String executedBy;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime executedDate;
     private String flagAgreement;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime createdDate;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime updatedDate;
     private String inputTenorByUser;
-
 }
