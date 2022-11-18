@@ -3,6 +3,7 @@ package bca.mbb.service;
 import bca.mbb.api.MessagingService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
+import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.dto.TransactionDetailDto;
 import bca.mbb.dto.TransactionHeaderDto;
@@ -41,6 +42,7 @@ import java.io.PrintStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -70,9 +72,6 @@ public class SCFKafkaConsumer {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     private final FoundationService foundationService;
 
-    private static final String CORE_CHANNEL = "CORE-SCF";
-    private static final String USER_SYSTEM = "SYSTEM";
-
     @KafkaListener(topics = "#{'${app.kafka.topic.notification}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-notification}'}", containerFactory = "validateDoneListener")
     public void validateDoneListen(NotificationData message) throws JsonProcessingException {
         if(message.getChannelId().equalsIgnoreCase(channelId)) {
@@ -88,15 +87,15 @@ public class SCFKafkaConsumer {
                 var listError = mapper.readValue(message.getListInvoiceErrorJson(), new TypeReference<ArrayList<InvoiceError>>() {
                 });
 
-                listError.forEach(error -> {
+                listError.forEach(error ->
                     foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
                             .foInvoiceErrorDetailId(CommonUtil.uuid())
                             .chainingId(message.getChainingId())
                             .errorCode(error.getErrorCode())
                             .errorDescriptionEng(error.getErrorDescEng())
                             .errorDescriptionInd(error.getErrorDescInd())
-                            .line(error.getLine()).build());
-                });
+                            .line(error.getLine()).build())
+                );
             }
 
             foTransactionHeaderRepository.save(header);
@@ -110,10 +109,10 @@ public class SCFKafkaConsumer {
         var foTransactionHeader = foTransactionHeaderRepository.findByFoTransactionHeaderId(message.getFoTransactionHeaderId());
         var foTransactionDetail = foTransactionDetailRepository.findAllByFoTransactionHeaderIdOrderByLineNumberAsc(message.getFoTransactionHeaderId());
         var filename = foTransactionHeader.getFileName();
-        var formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        var file = File.createTempFile(filename, ".txt");
+        var formatter = DateTimeFormatter.ofPattern(Constant.FORMAT_DATE);
+        var file = File.createTempFile(filename, Constant.EXTENSION);
         var printStream = new PrintStream(file);
-        var transactionType = foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? "Tambah" : "Hapus";
+        var transactionType = foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? Constant.TYPE_ADD_IDN : Constant.TYPE_DELETE_IDN;
 
         printStream.print("0|" + transactionType + "|||" + foTransactionHeader.getCorporateCode() + "|" + (!CommonUtil.isNullOrEmpty(foTransactionHeader.getFileHeaderId()) ? foTransactionHeader.getFileHeaderId() : "") + "|||||||||||||||||" + "\n");
 
@@ -148,7 +147,7 @@ public class SCFKafkaConsumer {
 
         var response = uploadInvoiceClient.uploadValidatedInvoice(message.getUser(), channelId, body).getBody();
 
-        if(!response.getErrorCode().equalsIgnoreCase(successCode)){
+        if(!Objects.isNull(response) && !response.getErrorCode().equalsIgnoreCase(successCode)){
             foTransactionHeader.setStatus(StatusEnum.FAILED);
             foTransactionHeader.setReason(response.getErrorMessageEn());
 
@@ -181,21 +180,21 @@ public class SCFKafkaConsumer {
             var prefix = "";
 
             if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name())){
-                prefix = "REQ";
+                prefix = Constant.TRANSACTION_TYPE_REQUEST_FINANCE;
             }
 
             if(message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())){
-                prefix = "RL";
+                prefix = Constant.TRANSACTION_TYPE_RESERVE_LIMIT;
             }
 
-            if (entityName.equalsIgnoreCase("TransactionHeader")) {
+            if (entityName.equalsIgnoreCase(Constant.ENTITY_NAME_TRANSACTION_HEADER)) {
                 var transactionHeader = mapper.readValue(entityValue, TransactionHeaderDto.class);
                 var foTransactionHeader = foTransactionHeaderRepository.findByTransactionHeaderId(transactionHeader.getTransactionHeaderId());
 
                 createTransactionHeader(transactionHeader, foTransactionHeader, prefix, message);
             }
 
-            if (entityName.equalsIgnoreCase("TransactionDetail")) {
+            if (entityName.equalsIgnoreCase(Constant.ENTITY_NAME_TRANSACTION_DETAIL)) {
                 var transactionDetail = mapper.readValue(entityValue, TransactionDetailDto.class);
                 var foTransactionDetail = foTransactionDetailRepository.findByTransactionDetailId(transactionDetail.getTransactionDetailId());
 
@@ -205,16 +204,16 @@ public class SCFKafkaConsumer {
     }
 
     private void createTransactionHeader(TransactionHeaderDto transactionHeader, FoTransactionHeaderEntity foTransactionHeader, String prefix, TransactionData message) throws JsonProcessingException {
-        if(foTransactionHeader.equals(null) && !CommonUtil.isNullOrEmpty(transactionHeader.getChannelReferenceNumber())){
+        if(Objects.isNull(foTransactionHeader) && !CommonUtil.isNullOrEmpty(transactionHeader.getChannelReferenceNumber())){
             foTransactionHeader = foTransactionHeaderRepository.findByReferenceNumber(transactionHeader.getChannelReferenceNumber());
         }
 
-        if(foTransactionHeader.equals(null)) {
+        if(Objects.isNull(foTransactionHeader)) {
             foTransactionHeader = new FoTransactionHeaderEntity();
             foTransactionHeader.setReferenceNumber(foTransactionHeaderRepository.getChannelRefnoSequence(prefix));
             transactionHeader.setChannelReferenceNumber(foTransactionHeader.getReferenceNumber());
 
-            foTransactionHeader.setRequestedBy(USER_SYSTEM);
+            foTransactionHeader.setRequestedBy(Constant.USER_SYSTEM);
             foTransactionHeader.setRequestedDate(transactionHeader.getExecutedDate());
 
             BeanUtils.copyProperties(transactionHeader, foTransactionHeader);
@@ -232,11 +231,11 @@ public class SCFKafkaConsumer {
     }
 
     private void createTransactionDetail(TransactionDetailDto transactionDetail, FoTransactionDetailEntity foTransactionDetail, String prefix, TransactionData message) throws JsonProcessingException {
-        if(foTransactionDetail.equals(null) && !CommonUtil.isNullOrEmpty(transactionDetail.getChannelReferenceNumber())){
+        if(Objects.isNull(foTransactionDetail) && !CommonUtil.isNullOrEmpty(transactionDetail.getChannelReferenceNumber())){
             foTransactionDetail = foTransactionDetailRepository.findByReferenceNumber(transactionDetail.getChannelReferenceNumber());
         }
 
-        if(foTransactionDetail.equals(null)) {
+        if(Objects.isNull(foTransactionDetail)) {
             var foTransactionHeader = foTransactionHeaderRepository.findByTransactionHeaderId(transactionDetail.getTransactionHeaderId());
             var referenceNUmber = foTransactionHeader.getReferenceNumber();
 
@@ -249,7 +248,7 @@ public class SCFKafkaConsumer {
             foTransactionDetail.setReferenceNumber(referenceNUmber);
             transactionDetail.setChannelReferenceNumber(foTransactionDetail.getReferenceNumber());
 
-            if(foTransactionHeader.getFinanceTenor().equals(null) || !foTransactionHeader.getFinanceTenor().equals(transactionDetail.getTenorValue())) {
+            if(Objects.isNull(foTransactionHeader.getFinanceTenor())|| !foTransactionHeader.getFinanceTenor().equals(transactionDetail.getTenorValue())) {
                 foTransactionHeader.setFinanceTenor(transactionDetail.getTenorValue());
             }
 
@@ -262,10 +261,10 @@ public class SCFKafkaConsumer {
         else {
             foTransactionDetail.setReason(transactionDetail.getFailedReason());
 
-            if(transactionDetail.getChannelReferenceNumber().contains("RFN")){
+            if(transactionDetail.getChannelReferenceNumber().contains(Constant.CHANNEL_REFERENCE_NUMBER_REFACT)){
                 foTransactionDetail.setRepaymentAmount(transactionDetail.getTransactionAmount());
             }
-            else if(transactionDetail.getChannelReferenceNumber().contains("PIN") && transactionDetail.getProductCode().equalsIgnoreCase("refact")){
+            else if(transactionDetail.getChannelReferenceNumber().contains(Constant.CHANNEL_REFERENCE_NUMBER_PAYFIN) && transactionDetail.getProductCode().equalsIgnoreCase(Constant.PRODUCT_CODE_REFACT)){
                 foTransactionDetail.setPaymentAmount(transactionDetail.getTransactionAmount());
             }
 
@@ -279,7 +278,7 @@ public class SCFKafkaConsumer {
         if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name()) || message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())) {
 
             message = TransactionData.newBuilder()
-                    .setChannelId(CORE_CHANNEL)
+                    .setChannelId(Constant.CORE_CHANNEL)
                     .setEntityName(entityName)
                     .setEntityValue(entityAsString).build();
 
