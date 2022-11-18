@@ -1,7 +1,6 @@
 package bca.mbb.clients;
 
 import bca.mbb.dto.ApiResponse;
-import bca.mbb.mbbcommonlib.response_output.MBBResultEntity;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;

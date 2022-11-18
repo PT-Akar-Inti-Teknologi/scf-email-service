@@ -2,7 +2,7 @@ package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
 import bca.mbb.clients.FoundationExternalClient;
-import bca.mbb.config.ApplicationConfiguration;
+import bca.mbb.dto.Constant;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.entity.FoTransactionHeaderEntity;
@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRES_NEW)
@@ -40,7 +41,6 @@ public class FoundationService {
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-    private final ApplicationConfiguration appConfiguration;
 
     public void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
         try {
@@ -49,16 +49,16 @@ public class FoundationService {
             messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
                     .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaBulkUpdateDto.builder().corpId(foTransactionHeader.getCorporateCode())
                             .userId(userId)
-                            .transactionType(appConfiguration.LOAN_UPLOAD_INVOICE)
+                            .transactionType(Constant.LOAN_UPLOAD_INVOICE)
                             .streamTransactionId(foTransactionHeader.getChainingId())
                             .transactionAmount(foTransactionHeader.getTotalAmount())
                             .transactionCurrency(CommonUtil.isNullOrEmpty(currency) ? null : currency)
                             .transactionStatus(foTransactionHeader.getStatus().name())
-                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? appConfiguration.add_description : appConfiguration.delete_description) +" – " + foTransactionHeader.getRemarks())
+                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? Constant.TYPE_ADD_IDN : Constant.TYPE_DELETE_IDN) +" – " + foTransactionHeader.getRemarks())
                             .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
                             .rejectCancelReason(foTransactionHeader.getReason()).build()))
                     .build());
-            if (!foTransactionHeader.getWorkflowFailure().equals(null)) {
+            if (!Objects.isNull(foTransactionHeader.getWorkflowFailure())) {
                 foTransactionHeader.setWorkflowFailure(null);
                 foTransactionHeaderRepository.save(foTransactionHeader);
             }
