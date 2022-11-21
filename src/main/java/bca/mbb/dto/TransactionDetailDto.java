@@ -17,13 +17,13 @@ public class TransactionDetailDto {
 
     private String transactionDetailId;
     private String transactionHeaderId;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate effectiveDate;
     private String invoiceMasterId;
     private String invoiceNumber;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate invoiceDate;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate invoiceDueDate;
     private BigDecimal invoiceAmount;
     private BigDecimal transactionAmount;
@@ -37,16 +37,16 @@ public class TransactionDetailDto {
     private String blockId;
     private String productCode;
     private String programCode;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate financeStartDate;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate financeDueDate;
     private Integer tenorValue;
     private String tenorUnit;
     private String financeCurrency;
     private BigDecimal financeAmount;
     private Integer interestCalculation;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate pastDueDate;
     private String primaryCreditAccountNumber;
     private String primaryCreditCurrency;
@@ -73,9 +73,9 @@ public class TransactionDetailDto {
     private Integer lineNumber;
     private String remarks;
     private String currency;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime createdDate;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE_TIME, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDateTime updatedDate;
     private String settlementType;
 

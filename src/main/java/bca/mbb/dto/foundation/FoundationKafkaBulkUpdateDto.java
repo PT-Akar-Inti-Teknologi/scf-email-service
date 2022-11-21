@@ -1,5 +1,6 @@
 package bca.mbb.dto.foundation;
 
+import bca.mbb.dto.Constant;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -16,6 +17,6 @@ public class FoundationKafkaBulkUpdateDto extends FoundationKafkaDto {
     private BigDecimal transactionAmount;
     private String transactionCurrency;
     private String rejectCancelReason;
-    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy", timezone = "Asia/Jakarta")
+    @JsonFormat(shape=JsonFormat.Shape.STRING, pattern = Constant.FORMAT_ENTITY_DATE, timezone = Constant.FORMAT_ENTITY_TIME_ZONE)
     private LocalDate transactionEffectiveDate;
 }
