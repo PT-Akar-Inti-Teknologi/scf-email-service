@@ -2,6 +2,7 @@ package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
 import bca.mbb.clients.FoundationExternalClient;
+import bca.mbb.dto.ApiResponse;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import bca.mbb.dto.foundation.UserDetailsDto;
@@ -19,6 +20,7 @@ import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +44,7 @@ public class FoundationService {
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    public void othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
+    public FoTransactionHeaderEntity othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
         try {
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
 
@@ -63,14 +65,14 @@ public class FoundationService {
                 foTransactionHeaderRepository.save(foTransactionHeader);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
             foTransactionHeader.setUpdatedDate(LocalDateTime.now());
             foTransactionHeaderRepository.save(foTransactionHeader);
         }
+        return foTransactionHeader;
     }
 
-    public void setAuthorizedFoundation(UserDetailsDto userDetailsDto, List<String> transactionStreamIds) throws JsonProcessingException {
-        foundationExternalClient.transactionDetailHistoryAuthorize(mapper.writeValueAsString(userDetailsDto), mapper.writeValueAsString(transactionStreamIds));
+    public ResponseEntity<ApiResponse> setAuthorizedFoundation(UserDetailsDto userDetailsDto, List<String> transactionStreamIds) throws JsonProcessingException {
+        return foundationExternalClient.transactionDetailHistoryAuthorize(mapper.writeValueAsString(userDetailsDto), mapper.writeValueAsString(transactionStreamIds));
     }
 }
