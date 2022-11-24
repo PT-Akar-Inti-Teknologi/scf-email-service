@@ -21,4 +21,5 @@ public class Constant {
     public static final String FORMAT_ENTITY_DATE = "dd/MM/yyyy";
     public static final String FORMAT_ENTITY_DATE_TIME = "dd/MM/yyyy HH:mm:ss";
     public static final String FORMAT_ENTITY_TIME_ZONE = "Asia/Jakarta";
+    public static final String IS_NULL = "null";
 }

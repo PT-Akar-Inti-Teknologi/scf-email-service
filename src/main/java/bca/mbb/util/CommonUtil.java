@@ -1,5 +1,6 @@
 package bca.mbb.util;
 
+import bca.mbb.dto.Constant;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +25,7 @@ public class CommonUtil {
     }
 
     public static boolean isNullOrEmpty(String str) {
-        return str == null || str.trim().isEmpty() || str.equalsIgnoreCase("null");
+        return str == null || str.trim().isEmpty() || str.equalsIgnoreCase(Constant.IS_NULL);
     }
 
     public static String[] getNullPropertyNames(Object source) {

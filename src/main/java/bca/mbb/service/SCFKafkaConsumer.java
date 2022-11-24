@@ -166,7 +166,10 @@ public class SCFKafkaConsumer {
 
         foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
 
-        foundationService.setAuthorizedFoundation(UserDetailsDto.builder().userId(message.getUser()).corpId(foTransactionHeader.getCorporateCode()).build(), List.of(foTransactionHeader.getChainingId()));
+        foundationService.setAuthorizedFoundation(UserDetailsDto.builder()
+                .userId(message.getUser())
+                .corpId(foTransactionHeader.getCorporateCode()).build(),
+                List.of(foTransactionHeader.getChainingId()));
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
