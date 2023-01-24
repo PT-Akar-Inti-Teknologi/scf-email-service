@@ -1,0 +1,14 @@
+{
+    "namespace": "bca.mbb.scf.avro",
+    "type": "record",
+    "name": "AutoFinanceData",
+    "fields": [
+        {"name": "chaining_id", "type": [ "null", "string" ], "default": null},
+        {"name": "invoice_master_id", "type": [ "null", "string" ], "default": null},
+        {"name": "is_auto_finance", "type": "string", "default": "YES"},
+        {"name": "limit_type", "type": "string", "default": "B"},
+        {"name": "transaction_header_id", "type": [ "null", "string" ], "default": null},
+        {"name": "username", "type": [ "null", "string" ], "default": null},
+        {"name": "channel_id", "type": [ "null", "string" ], "default": null}
+    ]
+}

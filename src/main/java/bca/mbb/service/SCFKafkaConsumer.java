@@ -5,15 +5,12 @@ import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.TransactionDetailDto;
-import bca.mbb.dto.TransactionHeaderDto;
 import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.scf.avro.AuthorizeUploadData;
 import bca.mbb.scf.avro.NotificationData;
-import bca.mbb.scf.avro.TransactionData;
 import bca.mbb.util.CommonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -21,13 +18,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
-import lib.fo.entity.FoTransactionDetailEntity;
-import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecordBase;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -171,124 +165,4 @@ public class SCFKafkaConsumer {
                 .corpId(foTransactionHeader.getCorporateCode()).build(),
                 List.of(foTransactionHeader.getChainingId()));
     }
-
-    @KafkaListener(topics = "#{'${app.kafka.topic.channel-transaction}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-transaction}'}", containerFactory = "channelSynchronizerListener")
-    public void channelSynchronizerListen(TransactionData message) throws JsonProcessingException {
-
-        if (message.getChannelId().equalsIgnoreCase(channelId)  && !CommonUtil.isNullOrEmpty(message.getEntityName()) && !CommonUtil.isNullOrEmpty(message.getEntityValue())) {
-
-            var entityName = message.getEntityName();
-            var entityValue = message.getEntityValue();
-
-            var prefix = "";
-
-            if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name())){
-                prefix = Constant.TRANSACTION_TYPE_REQUEST_FINANCE;
-            }
-
-            if(message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())){
-                prefix = Constant.TRANSACTION_TYPE_RESERVE_LIMIT;
-            }
-
-            if (entityName.equalsIgnoreCase(Constant.ENTITY_NAME_TRANSACTION_HEADER)) {
-                var transactionHeader = mapper.readValue(entityValue, TransactionHeaderDto.class);
-                var foTransactionHeader = foTransactionHeaderRepository.findByTransactionHeaderId(transactionHeader.getTransactionHeaderId());
-
-                createTransactionHeader(transactionHeader, foTransactionHeader, prefix, message);
-            }
-
-            if (entityName.equalsIgnoreCase(Constant.ENTITY_NAME_TRANSACTION_DETAIL)) {
-                var transactionDetail = mapper.readValue(entityValue, TransactionDetailDto.class);
-                var foTransactionDetail = foTransactionDetailRepository.findByTransactionDetailId(transactionDetail.getTransactionDetailId());
-
-                createTransactionDetail(transactionDetail, foTransactionDetail, prefix, message);
-            }
-        }
-    }
-
-    private void createTransactionHeader(TransactionHeaderDto transactionHeader, FoTransactionHeaderEntity foTransactionHeader, String prefix, TransactionData message) throws JsonProcessingException {
-        if(Objects.isNull(foTransactionHeader) && !CommonUtil.isNullOrEmpty(transactionHeader.getChannelReferenceNumber())){
-            foTransactionHeader = foTransactionHeaderRepository.findByReferenceNumber(transactionHeader.getChannelReferenceNumber());
-        }
-
-        if(Objects.isNull(foTransactionHeader)) {
-            foTransactionHeader = new FoTransactionHeaderEntity();
-            foTransactionHeader.setReferenceNumber(foTransactionHeaderRepository.getChannelRefnoSequence(prefix));
-            transactionHeader.setChannelReferenceNumber(foTransactionHeader.getReferenceNumber());
-
-            foTransactionHeader.setRequestedBy(Constant.USER_SYSTEM);
-            foTransactionHeader.setRequestedDate(transactionHeader.getExecutedDate());
-
-            BeanUtils.copyProperties(transactionHeader, foTransactionHeader);
-            foTransactionHeader.setReason(transactionHeader.getFailedReason());
-
-            foTransactionHeaderRepository.save(foTransactionHeader);
-
-            sendTransactionData(message, message.getEntityName(), mapper.writeValueAsString(transactionHeader));
-        }
-        else {
-            foTransactionHeader.setReason(transactionHeader.getFailedReason());
-            BeanUtils.copyProperties(transactionHeader, foTransactionHeader, CommonUtil.getNullPropertyNames(transactionHeader));
-            foTransactionHeaderRepository.save(foTransactionHeader);
-        }
-    }
-
-    private void createTransactionDetail(TransactionDetailDto transactionDetail, FoTransactionDetailEntity foTransactionDetail, String prefix, TransactionData message) throws JsonProcessingException {
-        if(Objects.isNull(foTransactionDetail) && !CommonUtil.isNullOrEmpty(transactionDetail.getChannelReferenceNumber())){
-            foTransactionDetail = foTransactionDetailRepository.findByReferenceNumber(transactionDetail.getChannelReferenceNumber());
-        }
-
-        if(Objects.isNull(foTransactionDetail)) {
-            var foTransactionHeader = foTransactionHeaderRepository.findByTransactionHeaderId(transactionDetail.getTransactionHeaderId());
-            var referenceNUmber = foTransactionHeader.getReferenceNumber();
-
-            if(foTransactionHeader.getTotalRecord() > 1){
-                referenceNUmber = foTransactionHeaderRepository.getChannelRefnoSequence(prefix);
-            }
-
-            foTransactionDetail = new FoTransactionDetailEntity();
-            foTransactionDetail.setFoTransactionHeaderId(foTransactionHeader.getFoTransactionHeaderId());
-            foTransactionDetail.setReferenceNumber(referenceNUmber);
-            transactionDetail.setChannelReferenceNumber(foTransactionDetail.getReferenceNumber());
-
-            if(Objects.isNull(foTransactionHeader.getFinanceTenor())|| !foTransactionHeader.getFinanceTenor().equals(transactionDetail.getTenorValue())) {
-                foTransactionHeader.setFinanceTenor(transactionDetail.getTenorValue());
-            }
-
-            BeanUtils.copyProperties(transactionDetail, foTransactionDetail);
-            foTransactionDetail.setReason(transactionDetail.getFailedReason());
-            foTransactionDetailRepository.save(foTransactionDetail);
-
-            sendTransactionData(message, message.getEntityName(), mapper.writeValueAsString(transactionDetail));
-        }
-        else {
-            foTransactionDetail.setReason(transactionDetail.getFailedReason());
-
-            if(transactionDetail.getChannelReferenceNumber().contains(Constant.CHANNEL_REFERENCE_NUMBER_REFACT)){
-                foTransactionDetail.setRepaymentAmount(transactionDetail.getTransactionAmount());
-            }
-            else if(transactionDetail.getChannelReferenceNumber().contains(Constant.CHANNEL_REFERENCE_NUMBER_PAYFIN) && transactionDetail.getProductCode().equalsIgnoreCase(Constant.PRODUCT_CODE_REFACT)){
-                foTransactionDetail.setPaymentAmount(transactionDetail.getTransactionAmount());
-            }
-
-            BeanUtils.copyProperties(transactionDetail, foTransactionDetail, CommonUtil.getNullPropertyNames(transactionDetail));
-            foTransactionDetailRepository.save(foTransactionDetail);
-        }
-    }
-
-    private void sendTransactionData(TransactionData message, String entityName, String entityAsString){
-
-        if(message.getTransactionType().equalsIgnoreCase(ActionEnum.REQUEST_FINANCE.name()) || message.getTransactionType().equalsIgnoreCase(ActionEnum.RESERVE_LIMIT.name())) {
-
-            message = TransactionData.newBuilder()
-                    .setChannelId(Constant.CORE_CHANNEL)
-                    .setEntityName(entityName)
-                    .setEntityValue(entityAsString).build();
-
-            messagingService.sendMessage(transactionDataTopic, message);
-        }
-
-    }
-
-
 }
