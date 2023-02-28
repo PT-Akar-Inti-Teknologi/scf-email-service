@@ -73,7 +73,7 @@ public class SCFKafkaConsumer {
             var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), ActionEnum.UPLOAD_INVOICE.name());
 
             if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
-                header.setStatus(StatusEnum.SUCCESS);
+                header.setStatus(StatusEnum.DONE);
             } else {
                 header.setStatus(StatusEnum.FAILED);
                 header.setReason(null);
