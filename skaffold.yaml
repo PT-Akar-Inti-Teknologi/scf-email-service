@@ -6,6 +6,6 @@ deploy:
       - "./k8s/*"
 build:
   artifacts:
-    - image: ait-cr.akarinti.tech/fo-upld-cons
+    - image: aitops/fo-upld-cons
       docker:
         dockerfile: Dockerfile

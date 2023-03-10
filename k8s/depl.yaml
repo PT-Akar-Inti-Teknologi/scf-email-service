@@ -17,10 +17,10 @@ spec:
         version: "1"
     spec:
       imagePullSecrets:
-        - name: registry-secret
+        - name: ait-registry-secret
       containers:
       - name: fo-upld-cons
-        image: ait-cr.akarinti.tech/fo-upld-cons
+        image: aitops/fo-upld-cons
         # resources:
         #   limits:
         #     memory: "128Mi"

@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: fo-upld-cons-svc
   labels:
+    ait.tech/fo-upload-consumer: master
     app: mbb
     service: fo-upld-cons
 spec:
