@@ -59,18 +59,23 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation "org.springframework.cloud:spring-cloud-starter-sleuth"
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 
-    implementation 'io.github.openfeign:feign-jackson:10.2.3'
-    implementation 'io.github.openfeign:feign-slf4j:10.2.3'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation 'io.github.openfeign:feign-core:12.1'
+    implementation 'io.github.openfeign:feign-jackson:12.1'
+    implementation 'io.github.openfeign:feign-gson:12.1'
+    implementation 'io.github.openfeign:feign-slf4j:12.1'
 
+    implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '7.2'
+
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.7'
 
 //    implementation group: 'bca.mbb.lib', name: 'mbb-common-lib', version: '1.0.0'
-    compile files('lib\\bca.core\\core-lib\\1.1.1\\3d560d16b21ced905379b4040c8a48ca6bf6697f\\core-lib-1.1.0.jar')
-    compile files('lib\\mbb-common-lib-1.2.0.jar')
     compile files('lib\\bca.core\\core-lib\\1.1.1\\3d560d16b21ced905379b4040c8a48ca6bf6697f\\core-lib-1.2.0.jar')
-    compile files('lib\\bca.mbbentity.lib.fo-1.0-plain.jar')
+    compile files('lib\\bca.core\\core-lib\\1.1.1\\3d560d16b21ced905379b4040c8a48ca6bf6697f\\core-lib-1.1.0.jar')
+    compile files('lib\\mbb-common-lib-1.6.0.jar')
+    compile files('lib\\mbb-scf-entity-lib-1.1-plain.jar')
 
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -81,7 +86,6 @@ dependencies {
 
     implementation('io.springfox:springfox-boot-starter:3.0.0')
     implementation('io.springfox:springfox-bean-validators:3.0.0')
-    implementation('io.springfox:springfox-swagger-ui:3.0.0')
     implementation('org.hibernate.validator:hibernate-validator-annotation-processor')
     implementation('org.hibernate.validator:hibernate-validator')
     implementation('com.oracle.database.jdbc:ojdbc10:19.10.0.0')

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "devSimulationClient", url="${dev-simulation.url}")
 public interface FoundationExternalClient {
-    @PostMapping(value = "/api/transaction-detail-history/authorized")
-    ResponseEntity<ApiResponse> transactionDetailHistoryAuthorize(@RequestHeader(name = "USER-DETAILS") String userDetails,
-                                                                  @RequestParam(name = "transaction-stream-id") String transactionStreamId);
+//    @PostMapping(value = "/api/transaction-detail-history/authorized")
+//    ResponseEntity<ApiResponse> transactionDetailHistoryAuthorize(@RequestHeader(name = "USER-DETAILS") String userDetails,
+//                                                                  @RequestParam(name = "transaction-stream-id") String transactionStreamId);
 }

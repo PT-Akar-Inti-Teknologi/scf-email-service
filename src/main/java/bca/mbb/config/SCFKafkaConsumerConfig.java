@@ -2,7 +2,6 @@ package bca.mbb.config;
 
 import bca.mbb.scf.avro.AuthorizeUploadData;
 import bca.mbb.scf.avro.NotificationData;
-import bca.mbb.scf.avro.TransactionData;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,13 +71,13 @@ public class SCFKafkaConsumerConfig {
         return factory;
     }
 
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, TransactionData> channelSynchronizerListener() {
-        ConcurrentKafkaListenerContainerFactory<String, TransactionData> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(groupIdTransaction));
-        factory.setConcurrency(Integer.parseInt(concurrency));
-        return factory;
-    }
+//    @Bean
+//    public ConcurrentKafkaListenerContainerFactory<String, TransactionData> channelSynchronizerListener() {
+//        ConcurrentKafkaListenerContainerFactory<String, TransactionData> factory = new ConcurrentKafkaListenerContainerFactory<>();
+//        factory.setConsumerFactory(consumerFactory(groupIdTransaction));
+//        factory.setConcurrency(Integer.parseInt(concurrency));
+//        return factory;
+//    }
 
     private ConsumerFactory<String, Object> consumerFactory(String groupId) {
         // enable debug for kerberos

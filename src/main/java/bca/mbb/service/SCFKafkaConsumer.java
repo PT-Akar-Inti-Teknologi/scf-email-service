@@ -54,13 +54,10 @@ public class SCFKafkaConsumer {
     @Value("${cutoff-code}")
     private String errorCutoffCode;
     private final UploadInvoiceClient uploadInvoiceClient;
-    @Value("${app.kafka.topic.core-transaction}")
-    private String transactionDataTopic;
 
     private final FoInvoiceErrorDetailRepository foInvoiceErrorDetailRepository;
     private final FoTransactionHeaderRepository foTransactionHeaderRepository;
     private final FoTransactionDetailRepository foTransactionDetailRepository;
-    private final MessagingService<SpecificRecordBase> messagingService;
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -138,6 +135,7 @@ public class SCFKafkaConsumer {
         body.add("chaining-id", foTransactionHeader.getChainingId());
         body.add("transaction-type", foTransactionHeader.getTransactionType());
         body.add("remarks", foTransactionHeader.getRemarks());
+        body.add("reference-number", foTransactionHeader.getReferenceNumber());
 
         var response = uploadInvoiceClient.uploadValidatedInvoice(message.getUser(), channelId, body).getBody();
 
@@ -159,10 +157,5 @@ public class SCFKafkaConsumer {
         }
 
         foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
-
-        foundationService.setAuthorizedFoundation(UserDetailsDto.builder()
-                .userId(message.getUser())
-                .corpId(foTransactionHeader.getCorporateCode()).build(),
-                List.of(foTransactionHeader.getChainingId()));
     }
 }
