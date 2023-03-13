@@ -1,15 +1,11 @@
 package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
-import bca.mbb.clients.FoundationExternalClient;
-import bca.mbb.dto.ApiResponse;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
-import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.util.CommonUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
