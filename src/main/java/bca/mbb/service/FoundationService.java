@@ -1,15 +1,11 @@
 package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
-import bca.mbb.clients.FoundationExternalClient;
-import bca.mbb.dto.ApiResponse;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
-import bca.mbb.dto.foundation.UserDetailsDto;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.util.CommonUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -20,13 +16,11 @@ import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -38,7 +32,6 @@ public class FoundationService {
     private String othersToFoundation;
     private final FoTransactionHeaderRepository foTransactionHeaderRepository;
     private final FoTransactionDetailRepository foTransactionDetailRepository;
-    private final FoundationExternalClient foundationExternalClient;
     private final MessagingService<SpecificRecordBase> messagingService;
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -70,9 +63,5 @@ public class FoundationService {
             foTransactionHeaderRepository.save(foTransactionHeader);
         }
         return foTransactionHeader;
-    }
-
-    public ResponseEntity<ApiResponse> setAuthorizedFoundation(UserDetailsDto userDetailsDto, List<String> transactionStreamIds) throws JsonProcessingException {
-        return foundationExternalClient.transactionDetailHistoryAuthorize(mapper.writeValueAsString(userDetailsDto), mapper.writeValueAsString(transactionStreamIds));
     }
 }

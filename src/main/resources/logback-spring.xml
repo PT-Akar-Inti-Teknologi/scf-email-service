@@ -1,33 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+    <!-- Console pattern format -->
+    <property name="LOG_LEVEL_PATTERN" value="${LOG_LEVEL_PATTERN:-%5p}"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level]){green} %clr([${springAppName:-}] [trace-%X{traceId:-}] [span-%X{spanId:-}] [parent-%X{parentId:-}] [identifier-%X{IDENTIFIER:-}]){magenta} [pid-${PID:-}] [%thread] %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"/>
+    <property name="LEGACY"
+              value="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-}|%X{spanId:-}|%X{parentSpanId:-}|%X{IDENTIFIER:-}] - %msg%n"/>
+
+    <!-- Appender to log to console -->
+    <appender name="console-legacy" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <!-- Minimum logging level to be presented in the console logs-->
+            <level>DEBUG</level>
+        </filter>
         <encoder>
-            <pattern>
-                [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId:-}|%X{spanId:-}|%X{parentSpanId:-}|%X{IDENTIFIER:-}] - %msg%replace(%xException){'[\r\n]','~~'}%nopex%n
-            </pattern>
+            <pattern>${LEGACY}</pattern>
+            <charset>utf8</charset>
         </encoder>
     </appender>
 
-    <springProfile name="local | dev | !(uat | prod)">
+
+    <!-- Appender to log to console -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <!-- Minimum logging level to be presented in the console logs-->
+            <level>DEBUG</level>
+        </filter>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Appender to log to file in a JSON format -->
+    <appender name="logstash" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <pattern>'['dd/MMM/yyyy:HH:mm:ss.SSS' 'XX']'</pattern>
+                </timestamp>
+                <pattern>
+                    <pattern>
+                        {
+                        "level": "%level",
+                        "service": "${springAppName:-}",
+                        "trace": "%X{traceId:-}",
+                        "span": "%X{spanId:-}",
+                        "parent": "%X{parentId:-}",
+                        "identifier": "%X{IDENTIFIER:-}",
+                        "thread": "%thread",
+                        "class": "%logger{40}",
+                        "message": "%message %n %exception"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+            <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+        </encoder>
+    </appender>
+
+    <springProfile name="local">
+        <logger name="org.springframework" level="DEBUG" />
+        <logger name="com.zaxxer" level="INFO" />
+        <logger name="org.flywaydb" level="INFO" />
+        <logger name="org.hibernate" level="INFO" />
+        <logger name="feign" level="DEBUG" />
+        <root level="DEBUG">
+            <appender-ref ref="console"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="dev | uat | !(prod)">
         <logger name="org.springframework" level="INFO" />
         <logger name="com.zaxxer" level="INFO" />
         <logger name="org.flywaydb" level="INFO" />
         <logger name="org.hibernate" level="INFO" />
-        <logger name="feign" level="INFO" />
-
-        <root level="INFO">
-            <appender-ref ref="STDOUT" />
+        <logger name="feign" level="DEBUG" />
+        <root level="DEBUG">
+            <appender-ref ref="console-legacy"/>
         </root>
     </springProfile>
-
-    <springProfile name="uat | prod">
-        <logger name="org.springframework" level="ERROR" />
-        <logger name="com.zaxxer" level="ERROR" />
-        <logger name="org.flywaydb" level="OFF" />
-        <logger name="org.hibernate" level="ERROR" />
-        <logger name="feign" level="INFO" />
-
-        <root level="INFO">
-            <appender-ref ref="STDOUT" />
+    <springProfile name="prod">
+        <logger name="org.springframework" level="INFO" />
+        <logger name="com.zaxxer" level="WARN" />
+        <logger name="org.flywaydb" level="WARN" />
+        <logger name="org.hibernate" level="INFO" />
+        <logger name="feign" level="DEBUG" />
+        <root level="DEBUG">
+            <appender-ref ref="logstash"/>
         </root>
     </springProfile>
 </configuration>

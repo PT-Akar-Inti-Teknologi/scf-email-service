@@ -32,6 +32,6 @@ public class MBBLoggerConfiguration {
 
   @Bean
   public LoggingInterceptor loggingInterceptor(MBBLogger logger, ConversionService conversionService) {
-    return new LoggingInterceptor(logger, conversionService);
+    return new LoggingInterceptor(logger);
   }
 }
