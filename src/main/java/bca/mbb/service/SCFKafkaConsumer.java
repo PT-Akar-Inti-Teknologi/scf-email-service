@@ -1,11 +1,13 @@
 package bca.mbb.service;
 
-import bca.mbb.api.MessagingService;
+import bca.mbb.adaptor.FeignClientService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.foundation.UserDetailsDto;
+import bca.mbb.dto.sendMail.RequestClientDto;
+import bca.mbb.enums.CoreApiEnum;
+import bca.mbb.mapper.RequestBodySendMailMapper;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
@@ -18,24 +20,27 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
+import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
-import org.apache.avro.specific.SpecificRecordBase;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.ObjectUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -62,13 +67,20 @@ public class SCFKafkaConsumer {
             .registerModule(new JavaTimeModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     private final FoundationService foundationService;
+    private final FeignClientService feignClientService;
+    @Autowired
+    private Environment env;
 
     @KafkaListener(topics = "#{'${app.kafka.topic.notification}_${channel-id}'}", groupId = "#{'${spring.kafka.consumer.group-id-notification}'}", containerFactory = "validateDoneListener")
     public void validateDoneListen(NotificationData message) throws JsonProcessingException {
+
         if(message.getChannelId().equalsIgnoreCase(channelId)) {
 
             var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), ActionEnum.UPLOAD_INVOICE.name());
 
+            StringBuilder errMsgEn = new StringBuilder();
+            StringBuilder errMegId = new StringBuilder();
+            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
             if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
                 header.setStatus(StatusEnum.DONE);
             } else {
@@ -78,20 +90,25 @@ public class SCFKafkaConsumer {
                 var listError = mapper.readValue(message.getListInvoiceErrorJson(), new TypeReference<ArrayList<InvoiceError>>() {
                 });
 
-                listError.forEach(error ->
+                listError.forEach(error -> {
                     foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
                             .foInvoiceErrorDetailId(CommonUtil.uuid())
                             .chainingId(message.getChainingId())
                             .errorCode(error.getErrorCode())
                             .errorDescriptionEng(error.getErrorDescEng())
                             .errorDescriptionInd(error.getErrorDescInd())
-                            .line(error.getLine()).build())
-                );
+                            .line(error.getLine()).createdDate(LocalDateTime.now()).build());
+                    errMsgEn.append(!ObjectUtils.isEmpty(errMsgEn) ? ", ": "");
+                    errMsgEn.append(error.getErrorDescEng());
+                    errMegId.append(!ObjectUtils.isEmpty(errMegId) ? ", ": "");
+                    errMegId.append(error.getErrorDescInd());
+                });
             }
 
             foTransactionHeaderRepository.save(header);
 
             foundationService.othersToFoundationKafkaUpdate(header, null);
+            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(errMsgEn.toString()).errorDescriptionInd(errMegId.toString()).build(), currency);
         }
     }
 
@@ -157,5 +174,13 @@ public class SCFKafkaConsumer {
         }
 
         foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
+    }
+
+    private void sendMail(FoTransactionHeaderEntity header, FoInvoiceErrorDetailEntity errorDetail, String currency) {
+        feignClientService.callRestApi(CoreApiEnum.SEND_MAIL, RequestClientDto.builder()
+                .channelId(Constant.FO_SCF)
+                .userId(Constant.FO_SCF)
+                .request(RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env)).build());
+
     }
 }
