@@ -86,13 +86,6 @@ public class CommonUtil {
         return actionEnum.equals(ActionEnum.ADD) ? Constant.WORDING_EMAIL_ADD : Constant.WORDING_EMAIL_DELETE;
     }
 
-    public static String reasonTranslate(ValidationMessageEnum validationMessageEnum, boolean isEng, Environment env) {
-        if (isEng) {
-            return env.getProperty(validationMessageEnum.getEnglish());
-        }
-        return env.getProperty(validationMessageEnum.getIndonesian());
-    }
-
     public static String nominal(BigDecimal totalAmount) {
         DecimalFormat df = new DecimalFormat("#,###.00");
         return df.format(totalAmount);
