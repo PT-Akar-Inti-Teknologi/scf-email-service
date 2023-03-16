@@ -12,6 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class RequestBodySendEmail {
     String transactionType;
+    String streamTransactionCode;
     boolean success;
     List<Map<String,String>> principal;
     List<Map<String,String>> counterparty;

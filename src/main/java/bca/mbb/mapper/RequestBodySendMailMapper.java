@@ -25,6 +25,7 @@ public abstract class RequestBodySendMailMapper {
     public static final RequestBodySendMailMapper INSTANCE = Mappers.getMapper(RequestBodySendMailMapper.class);
 
     @Mapping(target = "transactionType", source = "foTransactionHeader.transactionName")
+    @Mapping(target = "streamTransactionCode", source = "foTransactionHeader.foTransactionHeaderId")
     @Mapping(target = "success", ignore = true)
     @Mapping(target = "principal", ignore = true)
     @Mapping(target = "counterparty", ignore = true)
