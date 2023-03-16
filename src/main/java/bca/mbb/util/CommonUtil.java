@@ -1,15 +1,24 @@
 package bca.mbb.util;
 
 import bca.mbb.dto.Constant;
+import bca.mbb.dto.InvoiceError;
+import lib.fo.enums.ActionEnum;
+import lib.fo.enums.StatusEnum;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import java.beans.PropertyDescriptor;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Component
 public class CommonUtil {
@@ -40,5 +49,53 @@ public class CommonUtil {
         }
         var result = new String[emptyNames.size()];
         return emptyNames.toArray(result);
+    }
+
+    public static String localDateTimeToIndonesia(LocalDateTime localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss z", new Locale("id", "ID"));
+
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Asia/Jakarta"));
+
+        return zonedDateTime.format(formatter);
+    }
+
+    public static String localDateTimeToEnglish(LocalDateTime localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss 'GMT'Z", Locale.ENGLISH);
+
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Asia/Jakarta"));
+
+        String formattedDateTime = zonedDateTime.format(formatter);
+
+        var zoneTime = formattedDateTime.split(" ");
+
+        return formattedDateTime.replace(zoneTime[zoneTime.length-1], zoneTime[zoneTime.length-1].replace("0", ""));
+    }
+
+    public static String statusTranslate(StatusEnum statusInput, boolean isEng) {
+        if (isEng) {
+            return statusInput.equals(StatusEnum.DONE) ? Constant.WORDING_EMAIL_SUCCESS_EN : Constant.WORDING_EMAIL_FAILED_EN;
+        }
+        return statusInput.equals(StatusEnum.DONE) ? Constant.WORDING_EMAIL_SUCCESS : Constant.WORDING_EMAIL_FAILED;
+    }
+
+    public static String typeTranslate(ActionEnum actionEnum, boolean isEng) {
+        if (isEng) {
+            return actionEnum.equals(ActionEnum.ADD) ? Constant.WORDING_EMAIL_ADD_EN : Constant.WORDING_EMAIL_DELETE_EN;
+        }
+        return actionEnum.equals(ActionEnum.ADD) ? Constant.WORDING_EMAIL_ADD : Constant.WORDING_EMAIL_DELETE;
+    }
+
+    public static String nominal(BigDecimal totalAmount) {
+        DecimalFormat df = new DecimalFormat("#,###.00");
+        return df.format(totalAmount);
+    }
+
+    public static String convertDateToString(LocalDateTime localDateTime, LocalDate localDate, String pattern) {
+        if (localDateTime != null) {
+            return DateTimeFormatter.ofPattern(pattern).format(localDateTime);
+        } else if (localDate != null) {
+            return DateTimeFormatter.ofPattern(pattern).format(localDate);
+        }
+        return null;
     }
 }
