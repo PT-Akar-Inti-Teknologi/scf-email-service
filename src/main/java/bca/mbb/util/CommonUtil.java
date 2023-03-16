@@ -1,25 +1,24 @@
 package bca.mbb.util;
 
 import bca.mbb.dto.Constant;
+import bca.mbb.dto.InvoiceError;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
 import java.beans.PropertyDescriptor;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class CommonUtil {
@@ -89,5 +88,14 @@ public class CommonUtil {
     public static String nominal(BigDecimal totalAmount) {
         DecimalFormat df = new DecimalFormat("#,###.00");
         return df.format(totalAmount);
+    }
+
+    public static String convertDateToString(LocalDateTime localDateTime, LocalDate localDate, String pattern) {
+        if (localDateTime != null) {
+            return DateTimeFormatter.ofPattern(pattern).format(localDateTime);
+        } else if (localDate != null) {
+            return DateTimeFormatter.ofPattern(pattern).format(localDate);
+        }
+        return null;
     }
 }

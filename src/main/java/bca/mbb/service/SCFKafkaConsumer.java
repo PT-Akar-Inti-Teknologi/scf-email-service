@@ -7,6 +7,7 @@ import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.dto.sendMail.RequestClientDto;
 import bca.mbb.enums.CoreApiEnum;
+import bca.mbb.mapper.FoInvoiceErrorDetailEntityMapper;
 import bca.mbb.mapper.RequestBodySendMailMapper;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
@@ -32,18 +33,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.ObjectUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.*;
 
 @Service
 @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRES_NEW)
@@ -78,8 +74,8 @@ public class SCFKafkaConsumer {
 
             var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), ActionEnum.UPLOAD_INVOICE.name());
 
-            StringBuilder errMsgEn = new StringBuilder();
-            StringBuilder errMegId = new StringBuilder();
+            Set<String> errMsgEn = new LinkedHashSet<>();
+            Set<String> errMsgId = new LinkedHashSet<>();
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
             if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
                 header.setStatus(StatusEnum.DONE);
@@ -91,24 +87,16 @@ public class SCFKafkaConsumer {
                 });
 
                 listError.forEach(error -> {
-                    foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
-                            .foInvoiceErrorDetailId(CommonUtil.uuid())
-                            .chainingId(message.getChainingId())
-                            .errorCode(error.getErrorCode())
-                            .errorDescriptionEng(error.getErrorDescEng())
-                            .errorDescriptionInd(error.getErrorDescInd())
-                            .line(error.getLine()).createdDate(LocalDateTime.now()).build());
-                    errMsgEn.append(!ObjectUtils.isEmpty(errMsgEn) ? ", ": "");
-                    errMsgEn.append(error.getErrorDescEng());
-                    errMegId.append(!ObjectUtils.isEmpty(errMegId) ? ", ": "");
-                    errMegId.append(error.getErrorDescInd());
+                    foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntityMapper.INSTANCE.from(Boolean.TRUE, message.getChainingId(), error, null, null, null));
+                    errMsgId.add(error.getErrorDescInd());
+                    errMsgEn.add(error.getErrorDescEng());
                 });
             }
 
             foTransactionHeaderRepository.save(header);
 
             foundationService.othersToFoundationKafkaUpdate(header, null);
-            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(errMsgEn.toString()).errorDescriptionInd(errMegId.toString()).build(), currency);
+            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build(), currency);
         }
     }
 
@@ -161,15 +149,7 @@ public class SCFKafkaConsumer {
             foTransactionHeader.setReason(response.getErrorMessageEn());
 
             if(response.getErrorCode().equalsIgnoreCase(errorCutoffCode)){
-                var totalRecords = foTransactionDetail.size() + 1;
-
-                foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntity.builder()
-                        .foInvoiceErrorDetailId(CommonUtil.uuid())
-                        .errorCode(response.getErrorCode())
-                        .errorDescriptionEng(response.getErrorMessageEn())
-                        .errorDescriptionInd(response.getErrorMessageInd())
-                        .chainingId(foTransactionHeader.getChainingId())
-                        .line(IntStream.range(1, totalRecords).boxed().map(String::valueOf).collect(Collectors.joining(","))).build());
+                foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntityMapper.INSTANCE.from(Boolean.FALSE, foTransactionHeader.getChainingId(), null, response, foTransactionHeader, foTransactionDetail));
             }
         }
 

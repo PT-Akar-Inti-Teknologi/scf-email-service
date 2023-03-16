@@ -4,8 +4,6 @@ public class Constant {
 
     private Constant() {}
 
-    public static final String CORE_CHANNEL = "CORE-SCF";
-    public static final String USER_SYSTEM = "SYSTEM";
     public static final String CHANNEL_REFERENCE_NUMBER_REFACT = "RFN";
     public static final String CHANNEL_REFERENCE_NUMBER_PAYFIN = "PIN";
     public static final String PRODUCT_CODE_REFACT = "refact";
@@ -13,8 +11,6 @@ public class Constant {
     public static final String EXTENSION = ".txt";
     public static final String TYPE_ADD_IDN = "Tambah";
     public static final String TYPE_DELETE_IDN = "Hapus";
-    public static final String TRANSACTION_TYPE_REQUEST_FINANCE = "REQ";
-    public static final String TRANSACTION_TYPE_RESERVE_LIMIT = "RL";
     public static final String ENTITY_NAME_TRANSACTION_HEADER = "TransactionHeader";
     public static final String ENTITY_NAME_TRANSACTION_DETAIL = "TransactionDetail";
     public static final String LOAN_UPLOAD_INVOICE = "LOAN_UPLOAD_INVOICE";
@@ -23,14 +19,16 @@ public class Constant {
     public static final String FORMAT_ENTITY_TIME_ZONE = "Asia/Jakarta";
     public static final String IS_NULL = "null";
     public static final String WORDING_EMAIL_SUCCESS = "Berhasil";
-    public static final String WORDING_EMAIL_EXPIRED = "Kedaluwarsa";
     public static final String WORDING_EMAIL_FAILED = "Gagal";
     public static final String WORDING_EMAIL_ADD = "Tambah";
     public static final String WORDING_EMAIL_DELETE = "Hapus";
     public static final String WORDING_EMAIL_SUCCESS_EN = "Success";
-    public static final String WORDING_EMAIL_EXPIRED_EN = "Expired";
     public static final String WORDING_EMAIL_FAILED_EN = "Failed";
     public static final String WORDING_EMAIL_ADD_EN = "Add";
     public static final String WORDING_EMAIL_DELETE_EN = "Delete";
     public static final String FO_SCF = "FO_SCF";
+    public static final String PATTERN_DATE_FOUNDATION = "yyyy-MM-dd";
+    public static final String TRANSACTION_TYPE_ADD = "ADD";
+    public static final String ADD_DESCRIPTION = "Tambah";
+    public static final String DELETE_DESCRIPTION = "Hapus";
 }

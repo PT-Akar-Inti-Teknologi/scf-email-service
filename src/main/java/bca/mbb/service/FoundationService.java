@@ -1,17 +1,14 @@
 package bca.mbb.service;
 
 import bca.mbb.api.MessagingService;
-import bca.mbb.dto.Constant;
-import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
+import bca.mbb.mapper.FoundationKafkaMapper;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
-import bca.mbb.util.CommonUtil;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mybcabisnis.approvalworkflowbulk.kafka.avro.TransactionBulk;
 import lib.fo.entity.FoTransactionHeaderEntity;
-import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecordBase;
@@ -42,17 +39,9 @@ public class FoundationService {
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
 
             messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
-                    .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaBulkUpdateDto.builder().corpId(foTransactionHeader.getCorporateCode())
-                            .userId(userId)
-                            .transactionType(Constant.LOAN_UPLOAD_INVOICE)
-                            .streamTransactionId(foTransactionHeader.getChainingId())
-                            .transactionAmount(foTransactionHeader.getTotalAmount())
-                            .transactionCurrency(CommonUtil.isNullOrEmpty(currency) ? null : currency)
-                            .transactionStatus(foTransactionHeader.getStatus().name())
-                            .transactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? Constant.TYPE_ADD_IDN : Constant.TYPE_DELETE_IDN) +" – " + foTransactionHeader.getRemarks())
-                            .transactionEffectiveDate(foTransactionHeader.getEffectiveDate())
-                            .rejectCancelReason(foTransactionHeader.getReason()).build()))
+                    .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)))
                     .build());
+
             if (!Objects.isNull(foTransactionHeader.getWorkflowFailure())) {
                 foTransactionHeader.setWorkflowFailure(null);
                 foTransactionHeaderRepository.save(foTransactionHeader);
