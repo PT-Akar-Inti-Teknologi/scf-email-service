@@ -27,6 +27,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "transactionType", source = "foTransactionHeader.transactionName")
     @Mapping(target = "streamTransactionCode", source = "foTransactionHeader.foTransactionHeaderId")
     @Mapping(target = "success", ignore = true)
+    @Mapping(target = "single", expression = "java(Boolean.FALSE)")
     @Mapping(target = "principal", ignore = true)
     @Mapping(target = "counterparty", ignore = true)
     public abstract RequestBodySendEmail from(FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env);

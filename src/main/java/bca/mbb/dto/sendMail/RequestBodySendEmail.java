@@ -14,6 +14,7 @@ public class RequestBodySendEmail {
     String transactionType;
     String streamTransactionCode;
     boolean success;
+    boolean single;
     List<Map<String,String>> principal;
     List<Map<String,String>> counterparty;
 }
