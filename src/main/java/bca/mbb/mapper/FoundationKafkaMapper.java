@@ -32,6 +32,7 @@ public abstract class FoundationKafkaMapper {
     @Mapping(target = "uploadDate", ignore = true)
     @Mapping(target = "rejectCancelReason", source = "foTransactionHeader.reason")
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "transactionRelationshipId", ignore = true)
     public abstract FoundationKafkaSampleDto from(String userId, FoTransactionHeaderEntity foTransactionHeader, String currency);
 
     @AfterMapping
