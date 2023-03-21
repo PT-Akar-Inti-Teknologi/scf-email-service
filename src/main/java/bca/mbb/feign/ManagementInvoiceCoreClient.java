@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "managementInvoiceCoreClient", url="${external-client.management-invoice.port}")
+@FeignClient(name = "managementInvoiceCoreClient", url="${external-client.management-invoice-FO.port}")
 public interface ManagementInvoiceCoreClient {
-    @PostMapping("/core/scf/email/send-body-email")
+    @PostMapping("/api/send-body-email")
     ResponseEntity<ApiResponse> sendBodyEmail(
             @RequestHeader("channel-id") String channelId,
             @RequestHeader("x-actor-id") String username,
