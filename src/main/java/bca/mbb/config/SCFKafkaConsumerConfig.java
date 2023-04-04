@@ -2,6 +2,7 @@ package bca.mbb.config;
 
 import bca.mbb.scf.avro.AuthorizeUploadData;
 import bca.mbb.scf.avro.NotificationData;
+import com.mybcabisnis.approvalworkflowbulk.kafka.avro.ApprovalStatusBulk;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ public class SCFKafkaConsumerConfig {
     private final String concurrency;
     @Value(value = "${spring.kafka.consumer.group-id-notification}")
     private String groupIdNotification;
+
+    @Value(value = "${spring.kafka.consumer.group-id-foundation-upload-release-bulk}")
+    private String groupFoundationUploadReleaseBulk;
 
     public SCFKafkaConsumerConfig(
             @Value("${confluent.broker.list}") final String brokerUrl,
@@ -53,6 +57,14 @@ public class SCFKafkaConsumerConfig {
     public ConcurrentKafkaListenerContainerFactory<String, AuthorizeUploadData> uploadValidatedInvoiceListener() {
         ConcurrentKafkaListenerContainerFactory<String, AuthorizeUploadData> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory(groupIdNotification));
+        factory.setConcurrency(Integer.parseInt(concurrency));
+        return factory;
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, ApprovalStatusBulk> foundationUploadReleaseBulk() {
+        ConcurrentKafkaListenerContainerFactory<String, ApprovalStatusBulk> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(groupFoundationUploadReleaseBulk));
         factory.setConcurrency(Integer.parseInt(concurrency));
         return factory;
     }

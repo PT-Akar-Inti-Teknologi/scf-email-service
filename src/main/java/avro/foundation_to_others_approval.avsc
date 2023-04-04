@@ -1,0 +1,31 @@
+{
+  "fields": [
+    {
+      "default": "",
+      "name": "transactionTypeGroup",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    },
+    {
+      "default": "",
+      "name": "transactionType",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    },
+    {
+      "default": "",
+      "name": "approvalJSON",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    }
+  ],
+  "name": "ApprovalStatusBulk",
+  "namespace": "com.mybcabisnis.approvalworkflowbulk.kafka.avro",
+  "type": "record"
+}

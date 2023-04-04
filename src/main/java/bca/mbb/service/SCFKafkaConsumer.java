@@ -3,6 +3,7 @@ package bca.mbb.service;
 import bca.mbb.adaptor.FeignClientService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
+import bca.mbb.dto.ApprovalBulkDto;
 import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.dto.sendMail.RequestClientDto;
@@ -20,7 +21,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.mybcabisnis.approvalworkflowbulk.kafka.avro.ApprovalStatusBulk;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
+import lib.fo.entity.FoTransactionDetailEntity;
 import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
@@ -154,6 +157,82 @@ public class SCFKafkaConsumer {
         }
 
         foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
+    }
+
+    @KafkaListener(topics = "#{'${app.kafka.topic.foundation-upload-release-bulk}'}", groupId = "#{'${spring.kafka.consumer.group-id-foundation-upload-release-bulk}'}", containerFactory = "foundationUploadReleaseBulk")
+    public void releaseUploadFoundation(ApprovalStatusBulk message) throws IOException {
+        var approvalBulkDto = mapper.readValue(message.getApprovalJSON(), ApprovalBulkDto.class);
+        var foTransactionHeader = foTransactionHeaderRepository.findByChainingIdAndTransactionName(approvalBulkDto.getStreamTransactionId(),ActionEnum.UPLOAD_INVOICE.name());
+
+        var foTransactionDetail = foTransactionDetailRepository.findAllByFoTransactionHeaderIdOrderByLineNumberAsc(foTransactionHeader.getFoTransactionHeaderId());
+        try{
+            if(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.WAITING_FOR_RELEASER.toString())){
+                foTransactionHeader.setStatus(StatusEnum.IN_PROGRESS);
+                var filename = foTransactionHeader.getFileName();
+                var formatter = DateTimeFormatter.ofPattern(Constant.FORMAT_DATE);
+                var file = File.createTempFile(filename, Constant.EXTENSION);
+                var printStream = new PrintStream(file);
+                var transactionType = foTransactionHeader.getTransactionType().equalsIgnoreCase(ActionEnum.ADD.name()) ? Constant.TYPE_ADD_IDN : Constant.TYPE_DELETE_IDN;
+
+                printStream.print("0|" + transactionType + "|||" + foTransactionHeader.getCorporateCode() + "|" + (!CommonUtil.isNullOrEmpty(foTransactionHeader.getFileHeaderId()) ? foTransactionHeader.getFileHeaderId() : "") + "|||||||||||||||||" + "\n");
+
+                foTransactionDetail.forEach(detail ->
+                        printStream.print(
+                                "1" + "|" +
+                                        detail.getInvoiceNumber() + "|" +
+                                        detail.getInvoiceDate().format(formatter) + "|" +
+                                        detail.getInvoiceDueDate().format(formatter) + "|" +
+                                        detail.getCurrency() + "|" +
+                                        detail.getInvoiceAmount() + "|" +
+                                        detail.getSellerCode() + "|" +
+                                        detail.getBuyerCode() + "|" +
+                                        detail.getProgramCode() + "|" +
+                                        detail.getRemarks() + "\n"
+                        )
+                );
+
+                printStream.flush();
+                printStream.close();
+
+                var body  = new LinkedMultiValueMap<String, Object>();
+                body.add("file", new MultipartInputStreamFileResource(new FileInputStream(file), filename));
+                body.add("ws-id", wsId);
+                body.add("party-type", foTransactionHeader.getPrimaryPartyType());
+                body.add("party-code", foTransactionHeader.getPrimaryPartyCode());
+                body.add("party-name", foTransactionHeader.getPrimaryPartyName());
+                body.add("corporate-code", foTransactionHeader.getCorporateCode());
+                body.add("chaining-id", foTransactionHeader.getChainingId());
+                body.add("transaction-type", foTransactionHeader.getTransactionType());
+                body.add("remarks", foTransactionHeader.getRemarks());
+                body.add("reference-number", foTransactionHeader.getReferenceNumber());
+
+                var response = uploadInvoiceClient.uploadValidatedInvoice(approvalBulkDto.getUserId(), channelId, body).getBody();
+
+                if(!Objects.isNull(response) && !response.getErrorCode().equalsIgnoreCase(successCode)){
+                    foTransactionHeader.setStatus(StatusEnum.FAILED);
+                    foTransactionHeader.setReason(response.getErrorMessageEn());
+
+                    if(response.getErrorCode().equalsIgnoreCase(errorCutoffCode)){
+                        foInvoiceErrorDetailRepository.save(FoInvoiceErrorDetailEntityMapper.INSTANCE.from(Boolean.FALSE, foTransactionHeader.getChainingId(), null, response, foTransactionHeader, foTransactionDetail));
+                    }
+                }
+
+                foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, approvalBulkDto.getUserId());
+            }else {
+                updateStatusTransaction(foTransactionHeader,foTransactionDetail,approvalBulkDto);
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private void updateStatusTransaction(FoTransactionHeaderEntity foTransactionHeader, List<FoTransactionDetailEntity> foTransactionDetail,ApprovalBulkDto approvalBulkDto){
+        foTransactionHeader.setStatus(StatusEnum.valueOf(approvalBulkDto.getTransactionStatus()));
+        foTransactionHeader.setReason(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.REJECTED.toString()) ? approvalBulkDto.getRejectReason() : foTransactionHeader.getReason());
+        foTransactionDetail.forEach(detail -> {
+            detail.setStatus(approvalBulkDto.getTransactionStatus());
+            detail.setReason(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.REJECTED.toString()) ? approvalBulkDto.getRejectReason() : detail.getReason());
+        });
     }
 
     private void sendMail(FoTransactionHeaderEntity header, FoInvoiceErrorDetailEntity errorDetail, String currency) {
