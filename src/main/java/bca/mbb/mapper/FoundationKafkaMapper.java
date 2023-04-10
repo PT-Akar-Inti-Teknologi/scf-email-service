@@ -2,7 +2,6 @@ package bca.mbb.mapper;
 
 import bca.mbb.dto.Constant;
 import bca.mbb.util.CommonUtil;
-import lib.fo.dto.UserDetailDto;
 import lib.fo.dto.foundation.FoundationKafkaSampleDto;
 import lib.fo.entity.FoTransactionHeaderEntity;
 import org.mapstruct.*;
