@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -228,9 +229,11 @@ public class SCFKafkaConsumer {
 
     private void updateStatusTransaction(FoTransactionHeaderEntity foTransactionHeader, List<FoTransactionDetailEntity> foTransactionDetail,ApprovalBulkDto approvalBulkDto){
         foTransactionHeader.setStatus(StatusEnum.valueOf(approvalBulkDto.getTransactionStatus()));
+        foTransactionHeader.setUpdatedDate(LocalDateTime.now());
         foTransactionHeader.setReason(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.REJECTED.toString()) ? approvalBulkDto.getRejectReason() : foTransactionHeader.getReason());
         foTransactionDetail.forEach(detail -> {
             detail.setStatus(approvalBulkDto.getTransactionStatus());
+            detail.setUpdatedDate(LocalDateTime.now());
             detail.setReason(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.REJECTED.toString()) ? approvalBulkDto.getRejectReason() : detail.getReason());
         });
     }
