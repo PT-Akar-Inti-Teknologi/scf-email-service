@@ -47,7 +47,7 @@ public class FoundationService {
                 foTransactionHeaderRepository.save(foTransactionHeader);
             }
         } catch (Exception e) {
-            foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE);
+            foTransactionHeader.setWorkflowFailure(StatusEnum.UPDATE.name());
             foTransactionHeader.setUpdatedDate(LocalDateTime.now());
             foTransactionHeaderRepository.save(foTransactionHeader);
         }
