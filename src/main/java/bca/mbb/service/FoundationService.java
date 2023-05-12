@@ -11,6 +11,7 @@ import com.mybcabisnis.approvalworkflowbulk.kafka.avro.TransactionBulk;
 import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
+@Slf4j
 @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
 public class FoundationService {
@@ -37,6 +39,10 @@ public class FoundationService {
     public FoTransactionHeaderEntity othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) {
         try {
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
+
+            log.info("Hit foundation update");
+            log.info("foTransactionHeader : {}", foTransactionHeader.toString());
+            log.info("kafka message : {}", mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)));
 
             messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
                     .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)))

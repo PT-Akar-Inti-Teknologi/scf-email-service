@@ -1,10 +1,31 @@
 {
-  "namespace": "bca.mbb.scf.avro",
-  "type": "record",
-  "name": "AuthorizeUploadData",
   "fields": [
-    {"name": "fo_transaction_header_id", "type": [ "null", "string" ], "default": null},
-    {"name": "user", "type": [ "null", "string" ], "default": null},
-    {"name": "chaining_id", "type": [ "null", "string" ], "default": null}
-  ]
+    {
+      "default": "",
+      "name": "fo_transaction_header_id",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    },
+    {
+      "default": "",
+      "name": "user",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    },
+    {
+      "default": "",
+      "name": "chaining_id",
+      "type": {
+        "avro.java.string": "String",
+        "type": "string"
+      }
+    }
+  ],
+  "name": "AuthorizeUploadData",
+  "namespace": "bca.mbb.scf.avro",
+  "type": "record"
 }

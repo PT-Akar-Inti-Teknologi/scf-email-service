@@ -28,6 +28,7 @@ import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -44,10 +45,12 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.apache.commons.lang3.StringUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
+@Slf4j
 public class SCFKafkaConsumer {
 
     @Value("${channel-id}")
@@ -98,7 +101,7 @@ public class SCFKafkaConsumer {
             }
 
             foTransactionHeaderRepository.save(header);
-
+            log.info("hit from validateDoneListen");
             foundationService.othersToFoundationKafkaUpdate(header, null);
             this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build(), currency);
         }
@@ -127,7 +130,7 @@ public class SCFKafkaConsumer {
                                 detail.getSellerCode() + "|" +
                                 detail.getBuyerCode() + "|" +
                                 detail.getProgramCode() + "|" +
-                                detail.getRemarks() + "\n"
+                                (detail.getRemarks() == null ? StringUtils.EMPTY : detail.getRemarks()) + "\n"
                 )
         );
 
@@ -157,17 +160,19 @@ public class SCFKafkaConsumer {
             }
         }
 
-        foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
+//        log.info("hit from uploadValidatedInvoiceListen");
+//        foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, message.getUser());
     }
 
     @KafkaListener(topics = "#{'${app.kafka.topic.foundation-upload-release-bulk}'}", groupId = "#{'${spring.kafka.consumer.group-id-foundation-upload-release-bulk}'}", containerFactory = "foundationUploadReleaseBulk")
     public void releaseUploadFoundation(ApprovalStatusBulk message) throws IOException {
+        log.info("Receiving data approve/release from Foundation: " + message.getApprovalJSON());
         var approvalBulkDto = mapper.readValue(message.getApprovalJSON(), ApprovalBulkDto.class);
         var foTransactionHeader = foTransactionHeaderRepository.findByChainingIdAndTransactionName(approvalBulkDto.getStreamTransactionId(),ActionEnum.UPLOAD_INVOICE.name());
 
         var foTransactionDetail = foTransactionDetailRepository.findAllByFoTransactionHeaderIdOrderByLineNumberAsc(foTransactionHeader.getFoTransactionHeaderId());
         try{
-            if(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.WAITING_FOR_RELEASER.toString())){
+            if(approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.WAITING_FOR_RELEASER.toString()) || approvalBulkDto.getTransactionStatus().equalsIgnoreCase(StatusEnum.RELEASED.toString())){
                 foTransactionHeader.setStatus(StatusEnum.IN_PROGRESS);
                 var filename = foTransactionHeader.getFileName();
                 var formatter = DateTimeFormatter.ofPattern(Constant.FORMAT_DATE);
@@ -208,6 +213,7 @@ public class SCFKafkaConsumer {
                 body.add("reference-number", foTransactionHeader.getReferenceNumber());
 
                 var response = uploadInvoiceClient.uploadValidatedInvoice(approvalBulkDto.getUserId(), channelId, body).getBody();
+                log.info("Hit core with file, response: " + response.toString());
 
                 if(!Objects.isNull(response) && !response.getErrorCode().equalsIgnoreCase(successCode)){
                     foTransactionHeader.setStatus(StatusEnum.FAILED);
@@ -218,6 +224,7 @@ public class SCFKafkaConsumer {
                     }
                 }
 
+                log.info("hit from releaseUploadFoundation");
                 foundationService.othersToFoundationKafkaUpdate(foTransactionHeader, approvalBulkDto.getUserId());
             }else {
                 updateStatusTransaction(foTransactionHeader,foTransactionDetail,approvalBulkDto);
