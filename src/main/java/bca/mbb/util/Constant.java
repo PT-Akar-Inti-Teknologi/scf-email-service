@@ -52,5 +52,6 @@ public class Constant {
     public static final String TRANSACTION_TYPE_ADD = "ADD";
     public static final String ADD_DESCRIPTION = "Tambah";
     public static final String DELETE_DESCRIPTION = "Hapus";
+    public static final String WORKFLOW_FAILURE_UPDATE = "UPDATE";
 
 }
