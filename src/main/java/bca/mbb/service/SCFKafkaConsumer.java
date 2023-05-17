@@ -4,8 +4,9 @@ import bca.mbb.adaptor.FeignClientService;
 import bca.mbb.clients.UploadInvoiceClient;
 import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.ApprovalBulkDto;
-import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
+import bca.mbb.dto.sendMail.GroupsDto;
+import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
 import bca.mbb.dto.sendMail.RequestClientDto;
 import bca.mbb.enums.CoreApiEnum;
 import bca.mbb.mapper.FoInvoiceErrorDetailEntityMapper;
@@ -16,6 +17,7 @@ import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.scf.avro.AuthorizeUploadData;
 import bca.mbb.scf.avro.NotificationData;
 import bca.mbb.util.CommonUtil;
+import bca.mbb.util.Constant;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -71,6 +73,7 @@ public class SCFKafkaConsumer {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     private final FoundationService foundationService;
     private final FeignClientService feignClientService;
+    private final EmailService emailService;
     @Autowired
     private Environment env;
 
@@ -81,9 +84,14 @@ public class SCFKafkaConsumer {
 
             var header = foTransactionHeaderRepository.findByChainingIdAndTransactionName(message.getChainingId(), ActionEnum.UPLOAD_INVOICE.name());
 
+            var detail = foTransactionDetailRepository.groupByProgramCodeSellerCodeBuyerCode(header.getFoTransactionHeaderId());
+
             Set<String> errMsgEn = new LinkedHashSet<>();
+
             Set<String> errMsgId = new LinkedHashSet<>();
+
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
+
             if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
                 header.setStatus(StatusEnum.DONE);
             } else {
@@ -103,7 +111,26 @@ public class SCFKafkaConsumer {
             foTransactionHeaderRepository.save(header);
             log.info("hit from validateDoneListen");
             foundationService.othersToFoundationKafkaUpdate(header, null);
-            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build(), currency);
+
+            var listGroup = new ArrayList<GroupsDto>();
+
+            detail.forEach(data-> {
+                var singleGroup = new GroupsDto();
+
+                singleGroup.setProgramCode(data.getProgramCode());
+                singleGroup.setBuyerCode(data.getBuyerId());
+                singleGroup.setSellerCode(data.getSellerId());
+
+                listGroup.add(singleGroup);
+            });
+
+            var errorDetail = FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build();
+
+            var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env);
+
+            emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
+
+//            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build(), currency);
         }
     }
 

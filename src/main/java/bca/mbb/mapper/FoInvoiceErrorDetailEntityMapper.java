@@ -1,9 +1,9 @@
 package bca.mbb.mapper;
 
 import bca.mbb.dto.ApiResponse;
-import bca.mbb.dto.Constant;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.util.CommonUtil;
+import bca.mbb.util.Constant;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
 import lib.fo.entity.FoTransactionDetailEntity;
 import lib.fo.entity.FoTransactionHeaderEntity;

@@ -26,4 +26,7 @@ public class RequestClientDto<T> {
     private String transactionStreamId;
     private int page;
     private int size;
+    private RequestBodySendBodyEmail requestBodySendBodyEmail;
+    private List<GroupsDto> groupsDtos;
+    private EmailCorporateDto emailCorporateDto;
 }

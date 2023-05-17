@@ -1,5 +1,6 @@
 package bca.mbb.mapper;
 
+import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
 import bca.mbb.dto.sendMail.RequestBodySendEmail;
 import bca.mbb.util.CommonUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +31,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "single", expression = "java(Boolean.FALSE)")
     @Mapping(target = "principal", ignore = true)
     @Mapping(target = "counterparty", ignore = true)
-    public abstract RequestBodySendEmail from(FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env);
+    public abstract RequestBodySendBodyEmail from(FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env);
 
     @Mapping(target = "status", expression = "java(CommonUtil.statusTranslate(foTransactionHeader.getStatus(), isEng))")
     @Mapping(target = "reason", expression = "java(!foTransactionHeader.getStatus().equals(StatusEnum.DONE) ? isEng ? errorDetail.getErrorDescriptionEng() : errorDetail.getErrorDescriptionInd() : null)")
@@ -54,7 +55,7 @@ public abstract class RequestBodySendMailMapper {
     public abstract UploadInvoiceCounterParty fromInvoiceCounterparty(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, String currency);
 
     @AfterMapping
-    protected void getSendEmailDto(@MappingTarget RequestBodySendEmail requestBodySendEmail, FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env) {
+    protected void getSendEmailDto(@MappingTarget RequestBodySendBodyEmail requestBodySendEmail, FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env) {
         requestBodySendEmail.setSuccess(foTransactionHeader.getStatus().equals(StatusEnum.DONE) ? Boolean.TRUE : Boolean.FALSE);
 
         List<Map<String, String>> principal = new ArrayList<>();

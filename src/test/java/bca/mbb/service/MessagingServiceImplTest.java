@@ -2,7 +2,6 @@ package bca.mbb.service;
 
 import bca.mbb.config.KafkaProducerResponse;
 import bca.mbb.config.SCFKafkaProducer;
-import bca.mbb.dto.Constant;
 import bca.mbb.dto.foundation.FoundationKafkaBulkUpdateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
