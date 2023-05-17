@@ -49,13 +49,14 @@ public class FoundationService {
                 .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)))
                 .build());
 
-        if (!sendKafkaFoundation.isSuccess()) {
-            foTransactionHeader.setWorkflowFailure(Constant.WORKFLOW_FAILURE_UPDATE);
-            foTransactionHeader.setUpdatedDate(LocalDateTime.now());
-            foTransactionHeaderRepository.save(foTransactionHeader);
-            updateWorkflowFailureService.updateWorkflowFailure(foTransactionHeader);
+        if (sendKafkaFoundation.isSuccess()) {
+            return foTransactionHeader;
         }
 
+        foTransactionHeader.setWorkflowFailure(Constant.WORKFLOW_FAILURE_UPDATE);
+        foTransactionHeader.setUpdatedDate(LocalDateTime.now());
+        foTransactionHeaderRepository.save(foTransactionHeader);
+        updateWorkflowFailureService.updateWorkflowFailure(foTransactionHeader);
         return foTransactionHeader;
     }
 }
