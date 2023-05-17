@@ -1,8 +1,29 @@
-package bca.mbb.dto;
+package bca.mbb.util;
+
+import bca.mbb.mbbcommonlib.constant.MBBConstant;
+import lib.fo.enums.ActionEnum;
+import lib.fo.enums.StatusEnum;
+
+import java.util.*;
 
 public class Constant {
 
     private Constant() {}
+
+    // EMAIL
+    public static final String SETTLEMENT_FULL_PAYMENT = "F";
+    public static final String PRINCIPAL = "PRINCIPAL";
+    public static final String COUNTERPARTY = "COUNTERPARTY";
+    public static final String SUBJECT_PRINCIPAL = "myBCA Bisnis – Internet Transaction Journal";
+    public static final String SUBJECT_COUNTERPARTY = "Beneficiary Information";
+    public static final String EMAILID = "MBBS_";
+    public static final String CLASS_NAME="class-name";
+    public static final String MESSAGE_VALUE_ACCESS_CORRESPONDS = "message.value.access.corresponds";
+    public static final String MBB_MESSAGES_TBD_ERROR_CODE = "mbb.messages.TBD.error-code";
+    public static final String MBB_MESSAGES_00_504_ERROR_CODE= "mbb.messages.MBB-00-504.error-code";
+    public static final String DATA_NOT_FOUND = "Data Not Found";
+    public static final String CHANNEL = "FOSCF";
+
 
     public static final String CHANNEL_REFERENCE_NUMBER_REFACT = "RFN";
     public static final String CHANNEL_REFERENCE_NUMBER_PAYFIN = "PIN";
@@ -31,4 +52,5 @@ public class Constant {
     public static final String TRANSACTION_TYPE_ADD = "ADD";
     public static final String ADD_DESCRIPTION = "Tambah";
     public static final String DELETE_DESCRIPTION = "Hapus";
+
 }
