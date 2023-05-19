@@ -31,6 +31,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "single", expression = "java(Boolean.FALSE)")
     @Mapping(target = "principal", ignore = true)
     @Mapping(target = "counterparty", ignore = true)
+    @Mapping(target = "corpId",source = "foTransactionHeader.corporateCode")
     public abstract RequestBodySendBodyEmail from(FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env);
 
     @Mapping(target = "status", expression = "java(CommonUtil.statusTranslate(foTransactionHeader.getStatus(), isEng))")

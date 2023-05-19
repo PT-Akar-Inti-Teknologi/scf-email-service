@@ -88,15 +88,16 @@ public class EmailService {
         if (responseCorporate.getErrorCode().equalsIgnoreCase("MBB-00-000")) {
 
             var outputSchemaCorporates = objectMapper.convertValue(responseCorporate.getOutputSchema(), EmailCorporateDto.class);
-            principalEmails = outputSchemaCorporates.getCorporate().stream()
-                    .filter(corpDto -> corpDto.getPartyType().equals(Constant.PRINCIPAL))
-                    .map(EmailCorporateDto.CorporateDto::getEmail)
-                    .collect(Collectors.toList());
-
-            counterpartyEmails = outputSchemaCorporates.getCorporate().stream()
-                    .filter(corpDto -> !corpDto.getPartyType().equals(Constant.PRINCIPAL))
-                    .map(EmailCorporateDto.CorporateDto::getEmail)
-                    .collect(Collectors.toList());
+            outputSchemaCorporates.getCorporate().stream()
+                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
+                    .forEach(corporateDto -> {
+                        mapEmails.put(corporateDto.getEmail(), corporateDto.getPartyType());
+                        if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
+                            principalEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
+                        } else {
+                            counterpartyEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
+                        }
+                    });
         }
 
         var externalEmailUser = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_USER, requestClient);
@@ -121,6 +122,7 @@ public class EmailService {
                     });
 
         }
+
 
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.CHANNEL);

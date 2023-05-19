@@ -26,6 +26,7 @@ public class RequestBodySendBodyEmail {
     private List<Map<String,String>>principal;
     private List<Map<String,String>>counterparty;
     private String currency;
+    private String corpId;
     private String[] emailCorporates;
     private String[] emailUser;
 
