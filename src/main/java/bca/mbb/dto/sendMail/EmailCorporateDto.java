@@ -1,5 +1,6 @@
 package bca.mbb.dto.sendMail;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
@@ -20,5 +21,17 @@ public class EmailCorporateDto
     private String streamTransactionCode;
     private boolean single;
     private List<CorporateDto> corporate;
+    @Data
+    @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CorporateDto {
+        private String corporateId;
+        private String corporateCorpId;
+        private String email;
+        private String partyType;
+    }
 
 }

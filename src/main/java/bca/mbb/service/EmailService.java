@@ -82,39 +82,53 @@ public class EmailService {
         var externalCorporate = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_CORPORATE, requestClient);
 
         var responseCorporate = objectMapper.convertValue(externalCorporate.getBody(), ApiResponse.class);
-
+        Map<String,String>mapEmails=new HashMap<>();
+        List<String>principalEmails=new ArrayList<>();
+        List<String>counterpartyEmails=new ArrayList<>();
         if (responseCorporate.getErrorCode().equalsIgnoreCase("MBB-00-000")) {
 
             var outputSchemaCorporates = objectMapper.convertValue(responseCorporate.getOutputSchema(), EmailCorporateDto.class);
+            principalEmails = outputSchemaCorporates.getCorporate().stream()
+                    .filter(corpDto -> corpDto.getPartyType().equals(Constant.PRINCIPAL))
+                    .map(EmailCorporateDto.CorporateDto::getEmail)
+                    .collect(Collectors.toList());
 
-            outputSchemaCorporates.getCorporate().forEach(corporates -> {
-                bodyEmail.setEmailCorporates( corporates.getEmail().split(";"));
-            });
+            counterpartyEmails = outputSchemaCorporates.getCorporate().stream()
+                    .filter(corpDto -> !corpDto.getPartyType().equals(Constant.PRINCIPAL))
+                    .map(EmailCorporateDto.CorporateDto::getEmail)
+                    .collect(Collectors.toList());
         }
 
         var externalEmailUser = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_USER, requestClient);
 
         var responseEmailUser = objectMapper.convertValue(externalEmailUser.getBody(), ApiResponse.class);
-
+        List<String> finalPrincipalEmails = principalEmails;
+        List<String> finalCounterpartyEmails = counterpartyEmails;
         if (responseEmailUser.getErrorCode().equalsIgnoreCase("MBB-00-000")) {
 
             var outputSchemaUser = objectMapper.convertValue(responseEmailUser.getOutputSchema(), ResponseEmailHeaderDto.class);
+            var emailUser=Arrays.asList(outputSchemaUser.getEmailAddress().split(";"));
 
-            var aa = Arrays.asList(outputSchemaUser.getEmailAddress().split(";"));
-            bodyEmail.setEmailUser( outputSchemaUser.getEmailAddress().split(";"));
+            emailUser.stream()
+                    .filter(userChecks -> mapEmails.get(userChecks) != null)
+                    .findFirst()
+                    .ifPresent(userChecks -> {
+                        if (mapEmails.get(userChecks).equals(Constant.PRINCIPAL)) {
+                            finalPrincipalEmails.addAll(emailUser);
+                        } else {
+                            finalCounterpartyEmails.addAll(emailUser);
+                        }
+                    });
+
         }
-
-        Set<String> uniqueList = Stream.of(Arrays.asList(bodyEmail.getEmailUser()), Arrays.asList(bodyEmail.getEmailCorporates())).flatMap(Collection::stream).collect(Collectors.toSet());
-
-        var emailResult = uniqueList.stream().distinct().collect(Collectors.joining(";"));
 
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.CHANNEL);
-        mapData(bodyEmail.getPrincipal(), bodyEmail, emailResult);
+        mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
 
         if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess())
             bodyEmail.setType(Constant.COUNTERPARTY);
-        mapData(bodyEmail.getCounterparty(), bodyEmail, emailResult);
+        mapData(bodyEmail.getCounterparty(), bodyEmail, finalCounterpartyEmails.stream().distinct().collect(Collectors.joining(";")));
 
         return new ResponseEntity<>(new MBBResultEntity<>(true, new ErrorSchema(MBB_SUCCESS_CODE, new ErrorSchema.ErrorMessage(MBB_SUCCESS_EN, MBB_SUCCESS_IND))), HttpStatus.OK);
     }
