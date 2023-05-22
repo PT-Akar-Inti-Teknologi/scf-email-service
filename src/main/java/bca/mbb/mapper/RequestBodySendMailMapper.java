@@ -26,7 +26,7 @@ public abstract class RequestBodySendMailMapper {
     public static final RequestBodySendMailMapper INSTANCE = Mappers.getMapper(RequestBodySendMailMapper.class);
 
     @Mapping(target = "transactionType", source = "foTransactionHeader.transactionName")
-    @Mapping(target = "streamTransactionCode", source = "foTransactionHeader.foTransactionHeaderId")
+    @Mapping(target = "streamTransactionCode", source = "foTransactionHeader.chainingId")
     @Mapping(target = "success", ignore = true)
     @Mapping(target = "single", expression = "java(Boolean.FALSE)")
     @Mapping(target = "principal", ignore = true)
@@ -35,7 +35,7 @@ public abstract class RequestBodySendMailMapper {
     public abstract RequestBodySendBodyEmail from(FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env);
 
     @Mapping(target = "status", expression = "java(CommonUtil.statusTranslate(foTransactionHeader.getStatus(), isEng))")
-    @Mapping(target = "reason", expression = "java(!foTransactionHeader.getStatus().equals(StatusEnum.DONE) ? isEng ? errorDetail.getErrorDescriptionEng() : errorDetail.getErrorDescriptionInd() : null)")
+    @Mapping(target = "reason", expression = "java(!foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) ? isEng ? errorDetail.getErrorDescriptionEng() : errorDetail.getErrorDescriptionInd() : null)")
     @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()))")
     @Mapping(target = "totalNominal", expression = "java(CommonUtil.nominal(foTransactionHeader.getTotalAmount()))")
     @Mapping(target = "totalRecord", source = "foTransactionHeader.totalRecord")
@@ -53,11 +53,12 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "keterangan", source = "foTransactionHeader.remarks")
     @Mapping(target = "noReferensi", source = "foTransactionHeader.referenceNumber")
     @Mapping(target = "corpName", source = "foTransactionHeader.corporateCode")
+    @Mapping(target = "currency", source = "currency")
     public abstract UploadInvoiceCounterParty fromInvoiceCounterparty(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, String currency);
 
     @AfterMapping
     protected void getSendEmailDto(@MappingTarget RequestBodySendBodyEmail requestBodySendEmail, FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env) {
-        requestBodySendEmail.setSuccess(foTransactionHeader.getStatus().equals(StatusEnum.DONE) ? Boolean.TRUE : Boolean.FALSE);
+        requestBodySendEmail.setSuccess(foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) ? Boolean.TRUE : Boolean.FALSE);
 
         List<Map<String, String>> principal = new ArrayList<>();
         principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.TRUE, currency, errorDetail, env), Map.class));

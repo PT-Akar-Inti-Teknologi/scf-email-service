@@ -27,6 +27,7 @@ public class ConstantEmail {
             UPLOAD_INVOICE_TOTALNOMINAL,
             UPLOAD_INVOICE_TOTALRECORD,
             UPLOAD_INVOICE_TIPEUPLOAD,
+            UPLOAD_INVOICE_CURRENCY,
             UPLOAD_INVOICE_KETERANGAN,
             UPLOAD_INVOICE_NOREFERENSI
     }));

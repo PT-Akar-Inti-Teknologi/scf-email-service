@@ -4,7 +4,7 @@ import bca.mbb.dto.ApiResponse;
 import bca.mbb.dto.sendMail.EmailCorporateDto;
 import bca.mbb.dto.sendMail.RequestBodySendEmail;
 import bca.mbb.dto.sendMail.RequestClientDto;
-import bca.mbb.feign.ExternaCorporatelClient;
+import bca.mbb.feign.ExternalCorporatelClient;
 import bca.mbb.feign.ExternalEmailClient;
 import bca.mbb.feign.UploadManagementClient;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ public class ExternalClientService {
 
     private final ExternalEmailClient externalClient;
 
-    private final ExternaCorporatelClient externaCorporatelClient;
+    private final ExternalCorporatelClient externaCorporatelClient;
 
     private final UploadManagementClient uploadManagementClient;
 
@@ -26,7 +26,8 @@ public class ExternalClientService {
     }
 
     public ResponseEntity<ApiResponse> getEmailCorporate(RequestClientDto<EmailCorporateDto> requestClientDto) {
-        return externaCorporatelClient.getEmailCorporate( requestClientDto.getEmailCorporateDto());
+        return externaCorporatelClient.getEmailCorporate( requestClientDto.getEmailCorporateDto(), requestClientDto.getEmailCorporateDto().isSingle(),
+                requestClientDto.getEmailCorporateDto().getStreamTransactionCode());
     }
 
     public ApiResponse getGroupId(RequestClientDto<RequestBodySendEmail> requestClientDto) {
