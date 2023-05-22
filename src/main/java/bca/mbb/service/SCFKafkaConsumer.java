@@ -110,7 +110,7 @@ public class SCFKafkaConsumer {
 
             foTransactionHeaderRepository.save(header);
             log.info("hit from validateDoneListen");
-            foundationService.othersToFoundationKafkaUpdate(header, null);
+            foundationService.othersToFoundationKafkaUpdate(header, header.getRequestedBy());
 
             var listGroup = new ArrayList<GroupsDto>();
 
