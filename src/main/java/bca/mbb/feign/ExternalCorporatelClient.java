@@ -10,10 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(name = "externalCorporateClient", url="${external-client.corporate}")
-public interface ExternaCorporatelClient {
+public interface ExternalCorporatelClient {
 
     @PostMapping("/api/corporate/email")
     ResponseEntity<ApiResponse> getEmailCorporate(
-            @RequestBody EmailCorporateDto bodyEmail
-    );
+            @RequestBody EmailCorporateDto bodyEmail,
+            @RequestHeader("single") boolean single,
+            @RequestHeader("stream_transaction_code") String streamTransactionCode);
 }

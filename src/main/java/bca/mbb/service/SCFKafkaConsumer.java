@@ -93,7 +93,7 @@ public class SCFKafkaConsumer {
             var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
 
             if (message.getStatus().equalsIgnoreCase(StatusEnum.SUCCESS.name())) {
-                header.setStatus(StatusEnum.DONE);
+                header.setStatus(StatusEnum.SUCCESS);
             } else {
                 header.setStatus(StatusEnum.FAILED);
                 header.setReason(null);

@@ -21,6 +21,7 @@ public class EmailCorporateDto
     private String streamTransactionCode;
     private boolean single;
     private List<CorporateDto> corporate;
+
     @Data
     @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -32,6 +33,17 @@ public class EmailCorporateDto
         private String corporateCorpId;
         private String email;
         private String partyType;
+    }
+
+    @Data
+    @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ObjectDto {
+        private String counterpartyCode;
+        private String programParameterGroupPrincipalId;
     }
 
 }

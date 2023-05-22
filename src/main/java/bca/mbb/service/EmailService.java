@@ -21,6 +21,7 @@ import id.co.bca.annotation.EnableLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,8 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
+    @Value("${channel-email}") private String channelId;
+
     private static final String MBB_SUCCESS_CODE = "SCF-00-000";
     private static final String MBB_SUCCESS_EN = "success";
     private static final String MBB_SUCCESS_IND = "sukses";
@@ -57,7 +60,7 @@ public class EmailService {
                 .build();
 
         var requestClient = RequestClientDto.builder()
-                .channelId(Constant.FO_SCF)
+                .channelId(channelId)
                 .userId(Constant.FO_SCF)
                 .requestBodySendBodyEmail(emailBcc)
                 .groupsDtos(groupsDto)
@@ -69,13 +72,12 @@ public class EmailService {
 
         if (responseGroup.getErrorCode().equalsIgnoreCase("SCF-00-000")) {
 
-            var outputSchemaGroup = objectMapper.convertValue(responseGroup.getOutputSchema(), new TypeReference<List<ObjectDto>>() {});
+            var outputSchemaGroup = objectMapper.convertValue(responseGroup.getOutputSchema(), new TypeReference<List<EmailCorporateDto.ObjectDto>>() {});
             var requestCorporate = new EmailCorporateDto();
 
             requestCorporate.setObject(outputSchemaGroup);
-            requestCorporate.setStreamTransactionCode(bodyEmail.getStreamTransactionCode());
             requestCorporate.setSingle(bodyEmail.isSingle());
-
+            requestCorporate.setStreamTransactionCode(bodyEmail.getStreamTransactionCode());
             requestClient.setEmailCorporateDto(requestCorporate);
         }
 
@@ -91,7 +93,8 @@ public class EmailService {
             outputSchemaCorporates.getCorporate().stream()
                     .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
                     .forEach(corporateDto -> {
-                        mapEmails.put(corporateDto.getEmail(), corporateDto.getPartyType());
+                        var emailWithoutComma=corporateDto.getEmail().replace(";","");
+                        mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
                         if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
                             principalEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
                         } else {
@@ -128,9 +131,10 @@ public class EmailService {
         bodyEmail.setChannelId(Constant.CHANNEL);
         mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
 
-        if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess())
+        if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess()) {
             bodyEmail.setType(Constant.COUNTERPARTY);
-        mapData(bodyEmail.getCounterparty(), bodyEmail, finalCounterpartyEmails.stream().distinct().collect(Collectors.joining(";")));
+            mapData(bodyEmail.getCounterparty(), bodyEmail, finalCounterpartyEmails.stream().distinct().collect(Collectors.joining(";")));
+        }
 
         return new ResponseEntity<>(new MBBResultEntity<>(true, new ErrorSchema(MBB_SUCCESS_CODE, new ErrorSchema.ErrorMessage(MBB_SUCCESS_EN, MBB_SUCCESS_IND))), HttpStatus.OK);
     }
