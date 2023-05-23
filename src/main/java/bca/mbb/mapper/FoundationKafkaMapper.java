@@ -36,6 +36,5 @@ public abstract class FoundationKafkaMapper {
 
     @AfterMapping
     protected void getTransactionDetails(@MappingTarget FoundationKafkaSampleDto foundationKafkaSampleDto, FoTransactionHeaderEntity foTransactionHeader) {
-        foundationKafkaSampleDto.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(Constant.TRANSACTION_TYPE_ADD) ? Constant.ADD_DESCRIPTION : Constant.DELETE_DESCRIPTION) + " — " + foTransactionHeader.getRemarks());
-    }
+        foundationKafkaSampleDto.setTransactionDetails((foTransactionHeader.getTransactionType().equalsIgnoreCase(Constant.TRANSACTION_TYPE_ADD) ? Constant.ADD_DESCRIPTION : Constant.DELETE_DESCRIPTION) + " - " + foTransactionHeader.getRemarks() +  " - " + foTransactionHeader.getTotalRecord() + " Records" );    }
 }

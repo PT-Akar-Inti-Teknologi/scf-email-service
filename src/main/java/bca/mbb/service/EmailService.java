@@ -75,9 +75,24 @@ public class EmailService {
             var outputSchemaGroup = objectMapper.convertValue(responseGroup.getOutputSchema(), new TypeReference<List<EmailCorporateDto.ObjectDto>>() {});
             var requestCorporate = new EmailCorporateDto();
 
-            requestCorporate.setObject(outputSchemaGroup);
             requestCorporate.setSingle(bodyEmail.isSingle());
             requestCorporate.setStreamTransactionCode(bodyEmail.getStreamTransactionCode());
+
+            var listObject = new ArrayList<EmailCorporateDto.ObjectDto>();
+            outputSchemaGroup.forEach( objectDto -> {
+
+                listObject.add(EmailCorporateDto.ObjectDto.builder()
+                        .counterpartyCode(null)
+                        .programParameterGroupPrincipalId(objectDto.getProgramParameterGroupPrincipalId())
+                        .build());
+
+                listObject.add(EmailCorporateDto.ObjectDto.builder()
+                        .counterpartyCode(objectDto.getCounterpartyCode())
+                        .programParameterGroupPrincipalId(objectDto.getProgramParameterGroupPrincipalId())
+                        .build());
+            });
+            requestCorporate.setObject(listObject);
+
             requestClient.setEmailCorporateDto(requestCorporate);
         }
 
