@@ -23,6 +23,13 @@ public class SCFKafkaConsumerConfig {
     private final String brokerUrl;
     private final String schemaRegistryUrl;
     private final String concurrency;
+    private final String sslBrokerLocation;
+    private final String sslTrustStoreLocation;
+    private final String sslTrustStorePassword;
+    private final String keyTabFileLocation;
+    private final String krb5ConfigFileLocation;
+    private final String principalName;
+    private final String serviceName;
     @Value(value = "${spring.kafka.consumer.group-id-notification}")
     private String groupIdNotification;
 
@@ -34,6 +41,9 @@ public class SCFKafkaConsumerConfig {
             @Value("${confluent.kerberos.keytab.location}") final String keyTabFileLocation,
             @Value("${confluent.kerberos.config.file}") final String krb5ConfigFileLocation,
             @Value("${confluent.kerberos.principal}") final String principalName,
+
+            @Value("${confluent.broker.truststore}") final String sslBrokerLocation,
+
             @Value("${confluent.kerberos.servicename}") final String serviceName,
             @Value("${confluent.schema.registry.truststore}") final String sslTrustStoreLocation,
             @Value("${confluent.schema.registry.truststore.password}") final String sslTrustStorePassword,
@@ -41,6 +51,13 @@ public class SCFKafkaConsumerConfig {
             @Value("${confluent.concurrency}") final String concurrency
     ) {
         this.brokerUrl = brokerUrl;
+        this.keyTabFileLocation = keyTabFileLocation;
+        this.krb5ConfigFileLocation = krb5ConfigFileLocation;
+        this.principalName = principalName;
+        this.serviceName = serviceName;
+        this.sslBrokerLocation = sslBrokerLocation;
+        this.sslTrustStoreLocation = sslTrustStoreLocation;
+        this.sslTrustStorePassword = sslTrustStorePassword;
         this.schemaRegistryUrl = schemaRegistryUrl;
         this.concurrency = concurrency;
     }
