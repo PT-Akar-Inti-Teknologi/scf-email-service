@@ -47,6 +47,9 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.apache.commons.lang3.StringUtils;
 
 @Service
@@ -112,24 +115,27 @@ public class SCFKafkaConsumer {
             log.info("hit from validateDoneListen");
             foundationService.othersToFoundationKafkaUpdate(header, header.getRequestedBy());
 
-            var listGroup = new ArrayList<GroupsDto>();
+            ExecutorService executorService = Executors.newFixedThreadPool(1);
+            executorService.submit(() -> {
+                var listGroup = new ArrayList<GroupsDto>();
 
-            detail.forEach(data-> {
-                var singleGroup = new GroupsDto();
+                detail.forEach(data-> {
+                    var singleGroup = new GroupsDto();
 
-                singleGroup.setProgramCode(data.getProgramCode());
-                singleGroup.setBuyerCode(data.getBuyerId());
-                singleGroup.setSellerCode(data.getSellerId());
+                    singleGroup.setProgramCode(data.getProgramCode());
+                    singleGroup.setBuyerCode(data.getBuyerId());
+                    singleGroup.setSellerCode(data.getSellerId());
 
-                listGroup.add(singleGroup);
+                    listGroup.add(singleGroup);
+                });
+
+                var errorDetail = FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build();
+
+                var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env);
+
+                emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
             });
-
-            var errorDetail = FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build();
-
-            var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env);
-
-            emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
-
+            executorService.shutdown();
 //            this.sendMail(header, FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build(), currency);
         }
     }
@@ -147,7 +153,7 @@ public class SCFKafkaConsumer {
     @KafkaListener(topics = "#{'${app.kafka.topic.foundation-upload-release-bulk}'}", groupId = "#{'${spring.kafka.consumer.group-id-foundation-upload-release-bulk}'}", containerFactory = "foundationUploadReleaseBulk")
     public void releaseUploadFoundation(ApprovalStatusBulk message) throws IOException {
         log.info("Receiving data approve/release from Foundation: " + message.getApprovalJSON());
-        log.info("Receiving data approve/release from Foundation: " + message.getApprovalJSON());
+
         var approvalBulkDto = mapper.readValue(message.getApprovalJSON(), ApprovalBulkDto.class);
         var foTransactionHeader = foTransactionHeaderRepository.findByChainingIdAndTransactionName(approvalBulkDto.getStreamTransactionId(),ActionEnum.UPLOAD_INVOICE.name());
         var foTransactionDetail = foTransactionDetailRepository.findAllByFoTransactionHeaderIdOrderByLineNumberAsc(foTransactionHeader.getFoTransactionHeaderId());
