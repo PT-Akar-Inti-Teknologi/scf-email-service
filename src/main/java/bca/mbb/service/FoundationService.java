@@ -41,6 +41,8 @@ public class FoundationService {
     public FoTransactionHeaderEntity othersToFoundationKafkaUpdate(FoTransactionHeaderEntity foTransactionHeader, String userId) throws JsonProcessingException {
         var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(foTransactionHeader.getFoTransactionHeaderId());
 
+        StringBuilder sbf = new StringBuilder();
+
         log.info("Hit foundation update");
         log.info("foTransactionHeader : {}", foTransactionHeader.toString());
         log.info("kafka message : {}", mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)));
@@ -48,6 +50,14 @@ public class FoundationService {
         var sendKafkaFoundation = messagingService.sendMessage(othersToFoundation, TransactionBulk.newBuilder()
                 .setTransactionJSON(mapper.writeValueAsString(FoundationKafkaMapper.INSTANCE.from(userId, foTransactionHeader, currency)))
                 .build());
+
+        sbf.append("SUCCESS")
+                .append("|Topic: " + sendKafkaFoundation.getRecMetadata().topic())
+                .append("|partition: " + sendKafkaFoundation.getRecMetadata().partition())
+                .append("|offset: " + sendKafkaFoundation.getRecMetadata().offset());
+        log.info(sbf.toString());
+
+        log.info("Done produce kafka from function othersToFoundation");
 
         if (sendKafkaFoundation.isSuccess()) {
             return foTransactionHeader;

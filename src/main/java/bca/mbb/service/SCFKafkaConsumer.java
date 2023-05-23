@@ -220,7 +220,7 @@ public class SCFKafkaConsumer {
                                         detail.getSellerCode() + "|" +
                                         detail.getBuyerCode() + "|" +
                                         detail.getProgramCode() + "|" +
-                                        detail.getRemarks() + "\n"
+                                        (detail.getRemarks() == null ? StringUtils.EMPTY : detail.getRemarks()) + "\n"
                         )
                 );
 
