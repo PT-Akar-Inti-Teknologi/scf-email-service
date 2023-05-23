@@ -14,7 +14,7 @@ public class Constant {
     public static final String SETTLEMENT_FULL_PAYMENT = "F";
     public static final String PRINCIPAL = "PRINCIPAL";
     public static final String COUNTERPARTY = "COUNTERPARTY";
-    public static final String SUBJECT_PRINCIPAL = "myBCA Bisnis – Internet Transaction Journal";
+    public static final String SUBJECT_PRINCIPAL = "myBCA Bisnis - Internet Transaction Journal";
     public static final String SUBJECT_COUNTERPARTY = "Beneficiary Information";
     public static final String EMAILID = "MBBS_";
     public static final String CLASS_NAME="class-name";

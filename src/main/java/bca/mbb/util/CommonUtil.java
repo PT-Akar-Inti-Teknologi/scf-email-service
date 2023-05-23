@@ -70,9 +70,9 @@ public class CommonUtil {
 
     public static String statusTranslate(StatusEnum statusInput, boolean isEng) {
         if (isEng) {
-            return statusInput.equals(StatusEnum.DONE) ? Constant.WORDING_EMAIL_SUCCESS_EN : Constant.WORDING_EMAIL_FAILED_EN;
+            return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS_EN : Constant.WORDING_EMAIL_FAILED_EN;
         }
-        return statusInput.equals(StatusEnum.DONE) ? Constant.WORDING_EMAIL_SUCCESS : Constant.WORDING_EMAIL_FAILED;
+        return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS : Constant.WORDING_EMAIL_FAILED;
     }
 
     public static String typeTranslate(ActionEnum actionEnum, boolean isEng) {
