@@ -106,7 +106,7 @@ public class EmailService {
 
             var outputSchemaCorporates = objectMapper.convertValue(responseCorporate.getOutputSchema(), EmailCorporateDto.class);
             outputSchemaCorporates.getCorporate().stream()
-                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
+//                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
                     .forEach(corporateDto -> {
                         var emailWithoutComma=corporateDto.getEmail().replace(";","");
                         mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
