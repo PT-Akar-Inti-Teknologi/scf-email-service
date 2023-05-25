@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @FeignClient(name = "externalCorporateClient", url="${external-client.corporate}")
 public interface ExternalCorporatelClient {
 
-    @PostMapping("/api/corporate/email")
+    @PostMapping("/api/corporate/email-scf")
     ResponseEntity<ApiResponse> getEmailCorporate(
             @RequestBody EmailCorporateDto bodyEmail,
             @RequestHeader("single") boolean single,
