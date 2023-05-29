@@ -6,7 +6,6 @@ import bca.mbb.config.MultipartInputStreamFileResource;
 import bca.mbb.dto.ApprovalBulkDto;
 import bca.mbb.dto.InvoiceError;
 import bca.mbb.dto.sendMail.GroupsDto;
-import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
 import bca.mbb.dto.sendMail.RequestClientDto;
 import bca.mbb.enums.CoreApiEnum;
 import bca.mbb.mapper.FoInvoiceErrorDetailEntityMapper;
@@ -49,8 +48,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import org.apache.commons.lang3.StringUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRES_NEW)
@@ -185,8 +182,8 @@ public class SCFKafkaConsumer {
 
     private void sendMail(FoTransactionHeaderEntity header, FoInvoiceErrorDetailEntity errorDetail, String currency) {
         feignClientService.callRestApi(CoreApiEnum.SEND_MAIL, RequestClientDto.builder()
-                .channelId(Constant.FO_SCF)
-                .userId(Constant.FO_SCF)
+                .channelId(Constant.MBBSCF)
+                .userId(Constant.MBBSCF)
                 .request(RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env)).build());
 
     }

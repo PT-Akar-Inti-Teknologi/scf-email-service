@@ -7,7 +7,6 @@ import bca.mbb.enums.CoreApiEnum;
 import bca.mbb.enums.email.EmailEnum;
 import bca.mbb.enums.email.TemplateCodeEnum;
 import bca.mbb.enums.email.TransactionPrefixEnum;
-import bca.mbb.mbbcommonlib.exception.GeneralException;
 import bca.mbb.mbbcommonlib.response_output.ErrorSchema;
 import bca.mbb.mbbcommonlib.response_output.MBBResultEntity;
 import bca.mbb.util.Constant;
@@ -32,7 +31,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @Service
 @EnableLogging
@@ -61,7 +59,7 @@ public class EmailService {
 
         var requestClient = RequestClientDto.builder()
                 .channelId(channelId)
-                .userId(Constant.FO_SCF)
+                .userId(Constant.MBBSCF)
                 .requestBodySendBodyEmail(emailBcc)
                 .groupsDtos(groupsDto)
                 .build();
@@ -143,7 +141,7 @@ public class EmailService {
 
 
         bodyEmail.setType(Constant.PRINCIPAL);
-        bodyEmail.setChannelId(Constant.CHANNEL);
+        bodyEmail.setChannelId(Constant.MBBSCF);
         mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
 
         if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess()) {
