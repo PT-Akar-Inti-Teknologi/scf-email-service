@@ -22,7 +22,7 @@ public class Constant {
     public static final String MBB_MESSAGES_TBD_ERROR_CODE = "mbb.messages.TBD.error-code";
     public static final String MBB_MESSAGES_00_504_ERROR_CODE= "mbb.messages.MBB-00-504.error-code";
     public static final String DATA_NOT_FOUND = "Data Not Found";
-    public static final String CHANNEL = "FOSCF";
+    public static final String MBBSCF = "MBBSCF";
 
 
     public static final String CHANNEL_REFERENCE_NUMBER_REFACT = "RFN";
@@ -47,7 +47,6 @@ public class Constant {
     public static final String WORDING_EMAIL_FAILED_EN = "Failed";
     public static final String WORDING_EMAIL_ADD_EN = "Add";
     public static final String WORDING_EMAIL_DELETE_EN = "Delete";
-    public static final String FO_SCF = "FO_SCF";
     public static final String PATTERN_DATE_FOUNDATION = "yyyy-MM-dd";
     public static final String TRANSACTION_TYPE_ADD = "ADD";
     public static final String ADD_DESCRIPTION = "Tambah";
