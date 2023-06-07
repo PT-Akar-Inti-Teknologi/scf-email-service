@@ -18,7 +18,7 @@ apply plugin: 'io.spring.dependency-management'
 group = 'bca.mbb'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
-def jarName = "fo-upload-consumer"
+def jarName = " scf-email-service"
 
 ext {
     set('springCloudVersion', "2021.0.2")

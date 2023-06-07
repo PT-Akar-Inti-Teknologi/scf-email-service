@@ -1,7 +1,6 @@
 package bca.mbb.mapper;
 
 import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
-import bca.mbb.dto.sendMail.RequestBodySendEmail;
 import bca.mbb.util.CommonUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lib.fo.dto.email.counterparty.UploadInvoiceCounterParty;

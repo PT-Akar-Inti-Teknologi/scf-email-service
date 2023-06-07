@@ -4,7 +4,7 @@ applications:
     health-check-type: process
     buildpacks:
       - java_buildpack_offline
-    path: ../build/libs/fo-upload-consumer.jar
+    path: ../build/libs/ scf-email-service.jar
     routes:
       - route: mybcabisnis-service-skeleton-dev.apps.pcf.dti.co.id
     env:

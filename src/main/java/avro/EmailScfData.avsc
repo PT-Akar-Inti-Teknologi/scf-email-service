@@ -1,0 +1,8 @@
+{
+    "namespace": "bca.mbb.scf.avro",
+    "type": "record",
+    "name": "EmailScfData",
+    "fields": [
+        {"name": "transaction_id", "type": [ "null", "string" ], "default": null}
+    ]
+}

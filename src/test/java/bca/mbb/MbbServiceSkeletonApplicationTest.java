@@ -20,6 +20,6 @@ class MbbServiceSkeletonApplicationTest {
 
     @Test
     void applicationContextTest() {
-        FoUploadConsumer.main(new String[]{});
+        FoEmailConsumer.main(new String[]{});
     }
 }

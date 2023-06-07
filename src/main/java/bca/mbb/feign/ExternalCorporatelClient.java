@@ -2,7 +2,6 @@ package bca.mbb.feign;
 
 import bca.mbb.dto.ApiResponse;
 import bca.mbb.dto.sendMail.EmailCorporateDto;
-import bca.mbb.dto.sendMail.RequestBodySendEmail;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

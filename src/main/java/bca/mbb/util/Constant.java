@@ -1,11 +1,5 @@
 package bca.mbb.util;
 
-import bca.mbb.mbbcommonlib.constant.MBBConstant;
-import lib.fo.enums.ActionEnum;
-import lib.fo.enums.StatusEnum;
-
-import java.util.*;
-
 public class Constant {
 
     private Constant() {}

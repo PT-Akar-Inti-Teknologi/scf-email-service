@@ -1,8 +1,6 @@
 package bca.mbb.config;
 
-import bca.mbb.scf.avro.AuthorizeUploadData;
-import bca.mbb.scf.avro.NotificationData;
-import com.mybcabisnis.approvalworkflowbulk.kafka.avro.ApprovalStatusBulk;
+import bca.mbb.scf.avro.EmailScfData;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +28,8 @@ public class SCFKafkaConsumerConfig {
     private final String krb5ConfigFileLocation;
     private final String principalName;
     private final String serviceName;
-    @Value(value = "${spring.kafka.consumer.group-id-notification}")
-    private String groupIdNotification;
-
-    @Value(value = "${spring.kafka.consumer.group-id-foundation-upload-release-bulk}")
-    private String groupFoundationUploadReleaseBulk;
+    @Value(value = "${spring.kafka.consumer.group-id-email}")
+    private String groupIdEmail;
 
     public SCFKafkaConsumerConfig(
             @Value("${confluent.broker.list}") final String brokerUrl,
@@ -63,25 +58,9 @@ public class SCFKafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, NotificationData> validateDoneListener() {
-        ConcurrentKafkaListenerContainerFactory<String, NotificationData> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(groupIdNotification));
-        factory.setConcurrency(Integer.parseInt(concurrency));
-        return factory;
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, AuthorizeUploadData> uploadValidatedInvoiceListener() {
-        ConcurrentKafkaListenerContainerFactory<String, AuthorizeUploadData> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(groupIdNotification));
-        factory.setConcurrency(Integer.parseInt(concurrency));
-        return factory;
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ApprovalStatusBulk> foundationUploadReleaseBulk() {
-        ConcurrentKafkaListenerContainerFactory<String, ApprovalStatusBulk> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(groupFoundationUploadReleaseBulk));
+    public ConcurrentKafkaListenerContainerFactory<String, EmailScfData> emailListener() {
+        ConcurrentKafkaListenerContainerFactory<String, EmailScfData> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory(groupIdEmail));
         factory.setConcurrency(Integer.parseInt(concurrency));
         return factory;
     }
