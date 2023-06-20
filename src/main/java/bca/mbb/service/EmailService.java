@@ -9,6 +9,7 @@ import bca.mbb.enums.email.TemplateCodeEnum;
 import bca.mbb.enums.email.TransactionPrefixEnum;
 import bca.mbb.mbbcommonlib.response_output.ErrorSchema;
 import bca.mbb.mbbcommonlib.response_output.MBBResultEntity;
+import bca.mbb.service.helper.EmailAccountMapperService;
 import bca.mbb.util.Constant;
 import bca.mbb.util.ConstantEmail;
 import com.bca.eai.email.async.EAIEmailRequest;
@@ -48,9 +49,9 @@ public class EmailService {
 
     private final EmailAsyncService emailAsyncService;
 
-    private final FeignClientService feignClientService;
+    private final EmailAccountMapperService emailAccountMapperService;
 
-    public ResponseEntity<MBBResultEntity<Object>> buildEmailGeneric(RequestBodySendBodyEmail bodyEmail, List<GroupsDto> groupsDto) {
+    public void buildEmailGeneric(RequestBodySendBodyEmail bodyEmail, List<GroupsDto> groupsDto) {
 
         var emailBcc = RequestBodySendBodyEmail.builder()
                 .streamTransactionCode(bodyEmail.getStreamTransactionCode())
@@ -63,82 +64,9 @@ public class EmailService {
                 .requestBodySendBodyEmail(emailBcc)
                 .groupsDtos(groupsDto)
                 .build();
-
-        var externalGroup = feignClientService.callRestApi(CoreApiEnum.GET_GROUP, requestClient);
-
-        var responseGroup = objectMapper.convertValue(externalGroup, ApiResponse.class);
-
-        if (responseGroup.getErrorCode().equalsIgnoreCase("SCF-00-000")) {
-
-            var outputSchemaGroup = objectMapper.convertValue(responseGroup.getOutputSchema(), new TypeReference<List<EmailCorporateDto.ObjectDto>>() {});
-            var requestCorporate = new EmailCorporateDto();
-
-            requestCorporate.setSingle(bodyEmail.isSingle());
-            requestCorporate.setStreamTransactionCode(bodyEmail.getStreamTransactionCode());
-
-            var listObject = new ArrayList<EmailCorporateDto.ObjectDto>();
-            outputSchemaGroup.forEach( objectDto -> {
-
-                listObject.add(EmailCorporateDto.ObjectDto.builder()
-                        .counterpartyCode(null)
-                        .programParameterGroupPrincipalId(objectDto.getProgramParameterGroupPrincipalId())
-                        .build());
-
-                listObject.add(EmailCorporateDto.ObjectDto.builder()
-                        .counterpartyCode(objectDto.getCounterpartyCode())
-                        .programParameterGroupPrincipalId(objectDto.getProgramParameterGroupPrincipalId())
-                        .build());
-            });
-            requestCorporate.setObject(listObject);
-
-            requestClient.setEmailCorporateDto(requestCorporate);
-        }
-
-        var externalCorporate = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_CORPORATE, requestClient);
-
-        var responseCorporate = objectMapper.convertValue(externalCorporate.getBody(), ApiResponse.class);
-        Map<String,String>mapEmails=new HashMap<>();
-        List<String>principalEmails=new ArrayList<>();
-        List<String>counterpartyEmails=new ArrayList<>();
-        if (responseCorporate.getErrorCode().equalsIgnoreCase("MBB-00-000")) {
-
-            var outputSchemaCorporates = objectMapper.convertValue(responseCorporate.getOutputSchema(), EmailCorporateDto.class);
-            outputSchemaCorporates.getCorporate().stream()
-//                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
-                    .forEach(corporateDto -> {
-                        var emailWithoutComma=corporateDto.getEmail().replace(";","");
-                        mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
-                        if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
-                            principalEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
-                        } else {
-                            counterpartyEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
-                        }
-                    });
-        }
-
-        var externalEmailUser = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_USER, requestClient);
-
-        var responseEmailUser = objectMapper.convertValue(externalEmailUser.getBody(), ApiResponse.class);
-        List<String> finalPrincipalEmails = principalEmails;
-        List<String> finalCounterpartyEmails = counterpartyEmails;
-        if (responseEmailUser.getErrorCode().equalsIgnoreCase("MBB-00-000")) {
-
-            var outputSchemaUser = objectMapper.convertValue(responseEmailUser.getOutputSchema(), ResponseEmailHeaderDto.class);
-            var emailUser=Arrays.asList(outputSchemaUser.getEmailAddress().split(";"));
-
-            emailUser.stream()
-                    .filter(userChecks -> mapEmails.get(userChecks) != null)
-                    .findFirst()
-                    .ifPresent(userChecks -> {
-                        if (mapEmails.get(userChecks).equals(Constant.PRINCIPAL)) {
-                            finalPrincipalEmails.addAll(emailUser);
-                        } else {
-                            finalCounterpartyEmails.addAll(emailUser);
-                        }
-                    });
-
-        }
-
+        List<String>finalPrincipalEmails=new ArrayList<>();
+        List<String>finalCounterpartyEmails=new ArrayList<>();
+        emailAccountMapperService.getEmailPrincipalAndCounterParty(finalPrincipalEmails,finalCounterpartyEmails,requestClient,bodyEmail);
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.MBBSCF);
         mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
@@ -147,8 +75,6 @@ public class EmailService {
             bodyEmail.setType(Constant.COUNTERPARTY);
             mapData(bodyEmail.getCounterparty(), bodyEmail, finalCounterpartyEmails.stream().distinct().collect(Collectors.joining(";")));
         }
-
-        return new ResponseEntity<>(new MBBResultEntity<>(true, new ErrorSchema(MBB_SUCCESS_CODE, new ErrorSchema.ErrorMessage(MBB_SUCCESS_EN, MBB_SUCCESS_IND))), HttpStatus.OK);
     }
 
     private void mapData(List<Map<String,String>> dataMaps, RequestBodySendBodyEmail bodyEmail,  String emailBcc){
@@ -204,8 +130,6 @@ public class EmailService {
 
             log.info("ALREADY SEND");
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
