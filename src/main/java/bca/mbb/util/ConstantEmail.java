@@ -12,24 +12,40 @@ public class ConstantEmail {
     private ConstantEmail() {
     }
 
-    public static List<EmailEnum> UPLOAD_INVOICE_PRINCIPAL_LIST = new ArrayList<>(List.of(new EmailEnum[]{
-            UPLOAD_INVOICE_TANGGALTRANSAKSI, UPLOAD_INVOICE_STATUS, UPLOAD_INVOICE_TOTALNOMINAL,
-            UPLOAD_INVOICE_TOTALRECORD,
-            UPLOAD_INVOICE_FILETRANSAKSI, UPLOAD_INVOICE_TIPEUPLOAD, UPLOAD_INVOICE_KETERANGAN,
-            UPLOAD_INVOICE_NOREFERENSI,
-            UPLOAD_INVOICE_CURRENCY,
-            UPLOAD_INVOICE_REASON
+    public static List<EmailEnum> PRINCIPAL_LIST = new ArrayList<>(List.of(new EmailEnum[]{
+            PROGRAMCODE,
+            PROGRAMNAME,
+            DEALERNAME,
+            TANGGALTRANSAKSI,
+            STATUS,
+            TOTALNOMINAL,
+            TOTALRECORD,
+            FILETRANSAKSI,
+            TIPEUPLOAD,
+            KETERANGAN,
+            NOREFERENSI,
+            CURRENCY,
+            REASON
     }));
 
-    public static List<EmailEnum> UPLOAD_INVOICE_COUNTER_PARTY_LIST = new ArrayList<>(List.of(new EmailEnum[]{
-            UPLOAD_INVOICE_CORPNAME,
-            UPLOAD_INVOICE_TANGGALTRANSAKSI,
-            UPLOAD_INVOICE_TOTALNOMINAL,
-            UPLOAD_INVOICE_TOTALRECORD,
-            UPLOAD_INVOICE_TIPEUPLOAD,
-            UPLOAD_INVOICE_CURRENCY,
-            UPLOAD_INVOICE_KETERANGAN,
-            UPLOAD_INVOICE_NOREFERENSI
+    public static List<EmailEnum> COUNTERPARTY_LIST = new ArrayList<>(List.of(new EmailEnum[]{
+            STATUS,
+            CORPNAME,
+            TANGGALTRANSAKSI,
+            TOTALNOMINAL,
+            TOTALSUCEEDAMOUNT,
+            TOTALFAILEDAMOUNT,
+            PROGRAMCODE,
+            PROGRAMNAME,
+            DEALERNAME,
+            TOTALRECORD,
+            TIPEUPLOAD,
+            CURRENCY,
+            KETERANGAN,
+            NOREFERENSI,
+            ACCOUNT,
+            ACCOUNTAMOUNT,
+            CREDITNOTE
     }));
 
 

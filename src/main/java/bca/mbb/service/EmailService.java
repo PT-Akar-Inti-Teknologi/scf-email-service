@@ -139,7 +139,6 @@ public class EmailService {
 
         }
 
-
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.MBBSCF);
         mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
@@ -179,8 +178,8 @@ public class EmailService {
                             .mapToObj(index -> {
                                 var lang = index > 0 ? "eng" : "in";
 
-                                List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? ConstantEmail.UPLOAD_INVOICE_PRINCIPAL_LIST
-                                        : ConstantEmail.UPLOAD_INVOICE_COUNTER_PARTY_LIST;
+                                List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? ConstantEmail.PRINCIPAL_LIST
+                                        : ConstantEmail.COUNTERPARTY_LIST;
 
                                 List<HashMap<String, String>> dataEmailBody = new ArrayList<>();
 
@@ -225,8 +224,6 @@ public class EmailService {
                     mapTemp.put("VALUE", entry.getValue());
                     return mapTemp;
                 })
-                .forEach(mapTemp -> {
-                    (dataEmailBody).add(new HashMap<>(mapTemp));
-                });
+                .forEach(mapTemp -> (dataEmailBody).add(new HashMap<>(mapTemp)));
     }
 }
