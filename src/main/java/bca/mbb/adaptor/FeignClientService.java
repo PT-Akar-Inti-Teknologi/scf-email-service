@@ -1,12 +1,12 @@
 package bca.mbb.adaptor;
 
-import bca.mbb.dto.sendMail.RequestClientDto;
+import bca.mbb.dto.sendmail.RequestClientDto;
 import bca.mbb.enums.CoreApiEnum;
 import bca.mbb.feign.ExternalCorporatelClient;
 import bca.mbb.feign.ExternalEmailClient;
 import bca.mbb.feign.UploadManagementClient;
 import bca.mbb.mbbcommonlib.exception.GeneralException;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class FeignClientService {
     public Object callRestApi(CoreApiEnum coreApiEnum, RequestClientDto requestClient) {
         try {
             ExternalClientService externalClient = new ExternalClientService(externalEmailClients, externalCorporatelClient, uploadManagementClient);
-            Method method = externalClient.getClass().getDeclaredMethod(env.getProperty(coreApiEnum.getMethodName()), RequestClientDto.class);
+            Method method = externalClient.getClass().getDeclaredMethod(coreApiEnum.getMethodName(), RequestClientDto.class);
             return method.invoke(externalClient, requestClient);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             logger.info("exception when call:{} at time:{}",env.getProperty(coreApiEnum.getMethodName()), LocalDateTime.now());

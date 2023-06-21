@@ -46,5 +46,6 @@ public class Constant {
     public static final String ADD_DESCRIPTION = "Tambah";
     public static final String DELETE_DESCRIPTION = "Hapus";
     public static final String WORKFLOW_FAILURE_UPDATE = "UPDATE";
+    public static final String UPLOAD_INVOICE = "UPLOAD_INVOICE";
 
 }

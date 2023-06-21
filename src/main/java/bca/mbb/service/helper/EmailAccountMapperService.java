@@ -2,11 +2,11 @@ package bca.mbb.service.helper;
 
 import bca.mbb.adaptor.FeignClientService;
 import bca.mbb.dto.ApiResponse;
-import bca.mbb.dto.sendMail.EmailCorporateDto;
-import bca.mbb.dto.sendMail.EmailCorporateDto.ObjectDto;
-import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
-import bca.mbb.dto.sendMail.RequestClientDto;
-import bca.mbb.dto.sendMail.ResponseEmailHeaderDto;
+import bca.mbb.dto.sendmail.EmailCorporateDto;
+import bca.mbb.dto.sendmail.EmailCorporateDto.ObjectDto;
+import bca.mbb.dto.sendmail.RequestBodySendBodyEmail;
+import bca.mbb.dto.sendmail.RequestClientDto;
+import bca.mbb.dto.sendmail.ResponseEmailHeaderDto;
 import bca.mbb.enums.CoreApiEnum;
 import bca.mbb.util.Constant;
 import com.fasterxml.jackson.core.type.TypeReference;

@@ -1,23 +1,19 @@
 package bca.mbb.service;
 
-import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.sendMail.GroupsDto;
-import bca.mbb.mapper.FoInvoiceErrorDetailEntityMapper;
+import bca.mbb.dto.sendmail.GroupsDto;
 import bca.mbb.mapper.RequestBodySendMailMapper;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.scf.avro.EmailScfData;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
-import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -55,9 +51,13 @@ public class SCFKafkaConsumer {
 
         var header = foTransactionHeaderRepository.findByFoTransactionHeaderId(message.getTransactionId());
 
-        var headerDto = foTransactionHeaderRepository.getCounterparty(header.getTransactionHeaderId());
+        var headerDto = foTransactionHeaderRepository.getCounterparty(header.getFoTransactionHeaderId());
 
         var foTransactionDetail = foTransactionDetailRepository.groupByProgramCodeSellerCodeBuyerCode(message.getTransactionId());
+
+        var totalRecord = foTransactionHeaderRepository.getTotalRecord(header.getFoTransactionHeaderId());
+
+        BeanUtils.copyProperties(totalRecord, headerDto, "counterparty_code", "counterparty_name");
 
         Set<String> errMsgEn = new LinkedHashSet<>();
 

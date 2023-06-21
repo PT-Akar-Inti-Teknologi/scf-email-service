@@ -1,10 +1,10 @@
 package bca.mbb.mapper;
 
 import bca.mbb.dto.FoTransactionHeaderDto;
-import bca.mbb.dto.sendMail.RequestBodySendBodyEmail;
+import bca.mbb.dto.sendmail.RequestBodySendBodyEmail;
 import bca.mbb.util.CommonUtil;
+import bca.mbb.util.Constant;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jdk.jfr.Name;
 import lib.fo.dto.email.counterparty.EmailCounterpartyDto;
 import lib.fo.dto.email.principal.EmailPrincipalDto;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
@@ -27,7 +27,7 @@ public abstract class RequestBodySendMailMapper {
     public static final RequestBodySendMailMapper INSTANCE = Mappers.getMapper(RequestBodySendMailMapper.class);
 
     @Mapping(target = "transactionType", source = "foTransactionHeader.transactionName")
-    @Mapping(target = "streamTransactionCode", source = "foTransactionHeader.chainingId")
+    @Mapping(target = "streamTransactionCode", expression = "java(this.setStreamTransactionCode(foTransactionHeader))")
     @Mapping(target = "success", ignore = true)
     @Mapping(target = "single", expression = "java(Boolean.FALSE)")
     @Mapping(target = "principal", ignore = true)
@@ -49,6 +49,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "programCode", source = "foTransactionHeader.programCode")
     @Mapping(target = "programName", source = "foTransactionHeader.programName")
     @Mapping(target = "dealerName", source = "headerDto.counterpartyName")
+    @Mapping(target = "typePayment", constant = "-")
     public abstract EmailPrincipalDto fromInvoicePrincipal(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, String currency, FoInvoiceErrorDetailEntity errorDetail, Environment env, FoTransactionHeaderDto headerDto);
 
     @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()))")
@@ -66,12 +67,17 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "accountAmount", expression = "java(CommonUtil.nominal(foTransactionHeader.getTotalAccountTransferAmount()))")
     @Mapping(target = "accountNumber", source = "foTransactionHeader.accountNumber")
     @Mapping(target = "creditNotedAmount", expression = "java(CommonUtil.nominal(foTransactionHeader.getTotalCreditNoteAmount()))")
+    @Mapping(target = "creditNoted", expression = "java(this.setCreditNote(foTransactionHeader))")
+    @Mapping(target = "totalSucceedAmount", expression = "java(this.setTotalSucceedAmount(headerDto))")
+    @Mapping(target = "totalSucceedRecord", expression = "java(this.setTotalSucceedRecord(headerDto))")
+    @Mapping(target = "totalFailedAmount", expression = "java(this.setTotalFailedAmount(headerDto))")
+    @Mapping(target = "totalFailedRecord", expression = "java(this.setTotalFailedRecord(headerDto))")
+    @Mapping(target = "typePayment",       expression = "java(this.setTypePayment(foTransactionHeader))")
     public abstract EmailCounterpartyDto fromInvoiceCounterparty(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, String currency, FoTransactionHeaderDto headerDto);
 
     @AfterMapping
     protected void getSendEmailDto(@MappingTarget RequestBodySendBodyEmail requestBodySendEmail, FoTransactionHeaderEntity foTransactionHeader, String currency, ObjectMapper mapper, FoInvoiceErrorDetailEntity errorDetail, Environment env, FoTransactionHeaderDto headerDto) {
         requestBodySendEmail.setSuccess(foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) ? Boolean.TRUE : Boolean.FALSE);
-
 
         List<Map<String, String>> principal = new ArrayList<>();
         principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.TRUE, currency, errorDetail, env, headerDto), Map.class));
@@ -90,7 +96,7 @@ public abstract class RequestBodySendMailMapper {
 
         if (foTransactionHeader.getTransactionType().equals("UPLOAD_INVOICE")) {
 
-            if(foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS)&&isEng)
+            if(foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) && isEng)
                 reason= errorDetail.getErrorDescriptionEng();
             else
                 reason= errorDetail.getErrorDescriptionInd();
@@ -99,5 +105,76 @@ public abstract class RequestBodySendMailMapper {
         }
 
         return reason;
+    }
+
+    protected String setCreditNote(FoTransactionHeaderEntity foTransactionHeaderEntity) {
+        if (!CommonUtil.isNullOrEmpty(foTransactionHeaderEntity.getCreditNotes())) {
+            return foTransactionHeaderEntity.getCreditNotes().replace(",", "<br/>");
+        }
+        return foTransactionHeaderEntity.getCreditNotes();
+    }
+
+    protected boolean checkFoTransactionHeaderDto(FoTransactionHeaderDto headerDto) {
+        return CommonUtil.isObjectEmpty(headerDto);
+    }
+
+    protected String setTotalSucceedAmount(FoTransactionHeaderDto headerDto) {
+        var result = checkFoTransactionHeaderDto(headerDto);
+
+        if (!result) {
+            return headerDto.getTotalPaymentSuccess().toString();
+        }
+        return null;
+    }
+
+    protected String setTotalSucceedRecord(FoTransactionHeaderDto headerDto) {
+        var result = checkFoTransactionHeaderDto(headerDto);
+
+        if (!result) {
+            return headerDto.getTotalInvoiceSuccess().toString();
+        }
+        return null;
+    }
+
+    protected String setTotalFailedAmount(FoTransactionHeaderDto headerDto) {
+        var result = checkFoTransactionHeaderDto(headerDto);
+
+        if (!result) {
+            return headerDto.getTotalPaymentFailed().toString();
+        }
+        return null;
+    }
+
+    protected String setTotalFailedRecord(FoTransactionHeaderDto headerDto) {
+        var result = checkFoTransactionHeaderDto(headerDto);
+
+        if (!result) {
+            return headerDto.getTotalInvoiceFailed().toString();
+        }
+        return null;
+    }
+
+    protected String setTypePayment(FoTransactionHeaderEntity headerEntity) {
+        String result = null;
+        if (!CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
+             result = "CN and ACC";
+        } else if (CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
+            result = "ACC";
+        } else if (!CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
+            result = "ACC";
+        } else if (headerEntity.getStatus().equals(StatusEnum.PARTIALLY_SUCCESSFUL) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
+            result = "Partially-CN";
+        } else if (headerEntity.getStatus().equals(StatusEnum.PARTIALLY_SUCCESSFUL) && !CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount())) {
+            result = "Partially-ACC";
+        }
+
+        return result;
+    }
+
+    protected String setStreamTransactionCode(FoTransactionHeaderEntity foTransactionHeaderEntity) {
+        if (foTransactionHeaderEntity.getTransactionName().equals(Constant.UPLOAD_INVOICE)) {
+            return foTransactionHeaderEntity.getChainingId();
+        }
+        return foTransactionHeaderEntity.getFoTransactionHeaderId();
     }
 }

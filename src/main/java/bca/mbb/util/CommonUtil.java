@@ -15,10 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class CommonUtil {
@@ -97,5 +94,21 @@ public class CommonUtil {
             return DateTimeFormatter.ofPattern(pattern).format(localDate);
         }
         return null;
+    }
+
+    public static synchronized boolean isObjectEmpty(Object object) {
+        if (object == null) return true;
+        else if (object instanceof String) {
+            if (((String) object).trim().length() == 0) {
+                return true;
+            }
+        } else if (object instanceof Collection) {
+            return isCollectionEmpty((Collection<?>) object);
+        }
+        return false;
+    }
+
+    private static boolean isCollectionEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
     }
 }

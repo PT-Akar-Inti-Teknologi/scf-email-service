@@ -1,29 +1,20 @@
 package bca.mbb.service;
 
-import bca.mbb.adaptor.FeignClientService;
-import bca.mbb.dto.ApiResponse;
-import bca.mbb.dto.sendMail.*;
-import bca.mbb.enums.CoreApiEnum;
+import bca.mbb.dto.sendmail.*;
 import bca.mbb.enums.email.EmailEnum;
 import bca.mbb.enums.email.TemplateCodeEnum;
 import bca.mbb.enums.email.TransactionPrefixEnum;
-import bca.mbb.mbbcommonlib.response_output.ErrorSchema;
-import bca.mbb.mbbcommonlib.response_output.MBBResultEntity;
 import bca.mbb.service.helper.EmailAccountMapperService;
 import bca.mbb.util.Constant;
 import bca.mbb.util.ConstantEmail;
 import com.bca.eai.email.async.EAIEmailRequest;
 import com.bca.eai.email.async.EmailAsyncService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.co.bca.annotation.EnableLogging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -64,11 +55,15 @@ public class EmailService {
                 .requestBodySendBodyEmail(emailBcc)
                 .groupsDtos(groupsDto)
                 .build();
+
         List<String>finalPrincipalEmails=new ArrayList<>();
         List<String>finalCounterpartyEmails=new ArrayList<>();
+
         emailAccountMapperService.getEmailPrincipalAndCounterParty(finalPrincipalEmails,finalCounterpartyEmails,requestClient,bodyEmail);
+
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.MBBSCF);
+
         mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
 
         if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess()) {
@@ -92,7 +87,13 @@ public class EmailService {
                     .emailCustomSubject(bodyEmail.getType().equals(Constant.PRINCIPAL) ? Constant.SUBJECT_PRINCIPAL : Constant.SUBJECT_COUNTERPARTY)
                     .build();
 
-            var templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
+            String templateCodes = null;
+
+            if (bodyEmail.getTransactionType().equals("UPLOAD_INVOICE")) {
+                 templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
+            } else {
+                templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCodePayinvoice(bodyEmail.getTransactionType(), dataMaps.get(0).get("typePayment"))).getTemplateCode();
+            }
 
             var email= EAIEmailRequest.builder()
                     .channelId(bodyEmail.getChannelId())
@@ -142,12 +143,16 @@ public class EmailService {
                     var enums = emailEnumList.stream()
                             .filter(emailEnum ->
                                     emailEnum.getFieldName().equals(entry.getKey())
-                            ).findFirst().get();
-                    Map<String, String> mapTemp = new HashMap<>();
-                    mapTemp.put("KEY", language.equals("in") ? enums.getFieldValueInd() : enums.getFieldValueEng());
-                    mapTemp.put("VALUE", entry.getValue());
-                    return mapTemp;
-                })
+                            ).findFirst().orElse(null);
+                    if(enums!=null){
+                        Map<String, String> mapTemp = new HashMap<>();
+                        mapTemp.put("KEY", language.equals("in") ? enums.getFieldValueInd() : enums.getFieldValueEng());
+                        mapTemp.put("VALUE", entry.getValue());
+                        return mapTemp;
+                    }
+                    return null;
+
+                }).filter(stringStringMap -> stringStringMap!=null)
                 .forEach(mapTemp -> (dataEmailBody).add(new HashMap<>(mapTemp)));
     }
 }
