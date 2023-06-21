@@ -57,7 +57,7 @@ public class SCFKafkaConsumer {
 
         var totalRecord = foTransactionHeaderRepository.getTotalRecord(header.getFoTransactionHeaderId());
 
-        BeanUtils.copyProperties(totalRecord, headerDto, "counterparty_code", "counterparty_name");
+        BeanUtils.copyProperties(totalRecord, headerDto, "counterpartyCode", "counterpartyName");
 
         Set<String> errMsgEn = new LinkedHashSet<>();
 
