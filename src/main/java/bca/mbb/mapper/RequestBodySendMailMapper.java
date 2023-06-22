@@ -81,16 +81,31 @@ public abstract class RequestBodySendMailMapper {
         requestBodySendEmail.setSuccess(foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) ? Boolean.TRUE : Boolean.FALSE);
 
         List<Map<String, String>> principal = new ArrayList<>();
-        principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.TRUE, currency, errorDetail, env, headerDto), Map.class));
-        principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.FALSE, currency, errorDetail, env, headerDto), Map.class));
-        requestBodySendEmail.setPrincipal(principal);
 
         List<Map<String, String>> counterparty = new ArrayList<>();
-//        if (requestBodySendEmail.isSuccess()) {
+        if (foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) && foTransactionHeader.getTransactionName().equals(Constant.PAY_INVOICE)) {
+            principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.TRUE, currency, errorDetail, env, headerDto), Map.class));
+            principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.FALSE, currency, errorDetail, env, headerDto), Map.class));
+            requestBodySendEmail.setPrincipal(principal);
+        } else {
+            principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.TRUE, currency, errorDetail, env, headerDto), Map.class));
+            principal.add(mapper.convertValue(fromInvoicePrincipal(foTransactionHeader, Boolean.FALSE, currency, errorDetail, env, headerDto), Map.class));
+            requestBodySendEmail.setPrincipal(principal);
+        }
+
+        if (foTransactionHeader.getTransactionName().equals(Constant.UPLOAD_INVOICE)) {
+            if (requestBodySendEmail.isSuccess()) {
+                counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.TRUE, currency, headerDto), Map.class));
+                counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.FALSE, currency, headerDto), Map.class));
+                requestBodySendEmail.setCounterparty(counterparty);
+            }
+        } else {
             counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.TRUE, currency, headerDto), Map.class));
             counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.FALSE, currency, headerDto), Map.class));
             requestBodySendEmail.setCounterparty(counterparty);
-//        }
+            requestBodySendEmail.setSuccess(Boolean.TRUE);
+        }
+
     }
     protected String setReason(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, FoInvoiceErrorDetailEntity errorDetail){
         String reason=null;
@@ -103,7 +118,7 @@ public abstract class RequestBodySendMailMapper {
                 reason= errorDetail.getErrorDescriptionInd();
         } else {
             reason = foTransactionHeader.getReason();
-        }
+         }
 
         return reason;
     }
@@ -123,7 +138,7 @@ public abstract class RequestBodySendMailMapper {
         var result = checkFoTransactionHeaderDto(headerDto);
 
         if (!result) {
-            return headerDto.getTotalPaymentSuccess().toString();
+             return CommonUtil.nominal(headerDto.getTotalPaymentSuccess());
         }
         return null;
     }
@@ -141,7 +156,7 @@ public abstract class RequestBodySendMailMapper {
         var result = checkFoTransactionHeaderDto(headerDto);
 
         if (!result) {
-            return headerDto.getTotalPaymentFailed().toString();
+            return CommonUtil.nominal(headerDto.getTotalPaymentFailed());
         }
         return null;
     }

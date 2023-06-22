@@ -34,10 +34,13 @@ public class ConstantEmail {
             TANGGALTRANSAKSI,
             TOTALNOMINAL,
             TOTALSUCEEDAMOUNT,
+            TOTALSUCEEDRECORD,
             TOTALFAILEDAMOUNT,
+            TOTALFAILEDRECORD,
             PROGRAMCODE,
             PROGRAMNAME,
             DEALERNAME,
+            DEALERCODE,
             TOTALRECORD,
             TIPEUPLOAD,
             CURRENCY,
@@ -45,7 +48,8 @@ public class ConstantEmail {
             NOREFERENSI,
             ACCOUNT,
             ACCOUNTAMOUNT,
-            CREDITNOTE
+            CREDITNOTE,
+            CREDITNOTEAMOUT
     }));
 
 
