@@ -15,6 +15,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.core.env.Environment;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "status", expression = "java(CommonUtil.statusTranslate(foTransactionHeader.getStatus(), isEng))")
 //    @Mapping(target = "reason", expression = "java(!foTransactionHeader.getStatus().equals(StatusEnum.SUCCESS) ? isEng ? errorDetail.getErrorDescriptionEng() : errorDetail.getErrorDescriptionInd() : null)")
     @Mapping(target = "reason",expression = "java(this.setReason(foTransactionHeader,isEng,errorDetail))")
-    @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()))")
+    @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()))")
     @Mapping(target = "totalNominal", expression = "java(CommonUtil.nominal(foTransactionHeader.getTotalAmount()))")
     @Mapping(target = "totalRecord", source = "foTransactionHeader.totalRecord")
     @Mapping(target = "fileTransaksi", source = "foTransactionHeader.fileName")
@@ -52,7 +53,7 @@ public abstract class RequestBodySendMailMapper {
     @Mapping(target = "typePayment", constant = "-")
     public abstract EmailPrincipalDto fromInvoicePrincipal(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, String currency, FoInvoiceErrorDetailEntity errorDetail, Environment env, FoTransactionHeaderDto headerDto);
 
-    @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()))")
+    @Mapping(target = "tanggalTransaksi", expression = "java(isEng ? CommonUtil.localDateTimeToIndonesia(foTransactionHeader.getCreatedDate()) : CommonUtil.localDateTimeToEnglish(foTransactionHeader.getCreatedDate()))")
     @Mapping(target = "totalNominal", expression = "java(CommonUtil.nominal(foTransactionHeader.getTotalAmount()))")
     @Mapping(target = "totalRecord", source = "foTransactionHeader.totalRecord")
     @Mapping(target = "tipeUpload", expression = "java(CommonUtil.typeTranslate(ActionEnum.valueOf(foTransactionHeader.getTransactionType()), isEng))")
@@ -85,11 +86,11 @@ public abstract class RequestBodySendMailMapper {
         requestBodySendEmail.setPrincipal(principal);
 
         List<Map<String, String>> counterparty = new ArrayList<>();
-        if (requestBodySendEmail.isSuccess()) {
+//        if (requestBodySendEmail.isSuccess()) {
             counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.TRUE, currency, headerDto), Map.class));
             counterparty.add(mapper.convertValue(fromInvoiceCounterparty(foTransactionHeader, Boolean.FALSE, currency, headerDto), Map.class));
             requestBodySendEmail.setCounterparty(counterparty);
-        }
+//        }
     }
     protected String setReason(FoTransactionHeaderEntity foTransactionHeader, boolean isEng, FoInvoiceErrorDetailEntity errorDetail){
         String reason=null;
@@ -156,16 +157,21 @@ public abstract class RequestBodySendMailMapper {
 
     protected String setTypePayment(FoTransactionHeaderEntity headerEntity) {
         String result = null;
-        if (!CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
-             result = "CN and ACC";
-        } else if (CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
-            result = "ACC";
-        } else if (!CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount()) && CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
-            result = "ACC";
-        } else if (headerEntity.getStatus().equals(StatusEnum.PARTIALLY_SUCCESSFUL) && !CommonUtil.isObjectEmpty(headerEntity.getTotalCreditNoteAmount())) {
-            result = "Partially-CN";
-        } else if (headerEntity.getStatus().equals(StatusEnum.PARTIALLY_SUCCESSFUL) && !CommonUtil.isObjectEmpty(headerEntity.getTotalAccountTransferAmount())) {
-            result = "Partially-ACC";
+
+        if (headerEntity.getStatus().equals(StatusEnum.PARTIALLY_SUCCESSFUL)) {
+            if (headerEntity.getTotalCreditNoteAmount().compareTo(BigDecimal.ZERO) > 0) {
+                result = "Partially-CN";
+            } else if (headerEntity.getTotalAccountTransferAmount().compareTo(BigDecimal.ZERO) > 0) {
+                result = "Partially-ACC";
+            }
+        } else {
+            if (headerEntity.getTotalAccountTransferAmount().compareTo(BigDecimal.ZERO) > 0 && headerEntity.getTotalCreditNoteAmount().compareTo(BigDecimal.ZERO) > 0) {
+                result = "CN and ACC";
+            } else if (headerEntity.getTotalCreditNoteAmount().compareTo(BigDecimal.ZERO) > 0) {
+                result = "CN";
+            } else if (headerEntity.getTotalAccountTransferAmount().compareTo(BigDecimal.ZERO) > 0) {
+                result = "ACC";
+            }
         }
 
         return result;
