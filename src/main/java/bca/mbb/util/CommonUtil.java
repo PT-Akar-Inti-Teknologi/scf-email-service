@@ -15,10 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class CommonUtil {
@@ -73,9 +70,23 @@ public class CommonUtil {
 
     public static String statusTranslate(StatusEnum statusInput, boolean isEng) {
         if (isEng) {
-            return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS_EN : Constant.WORDING_EMAIL_FAILED_EN;
+            if (statusInput.equals(StatusEnum.SUCCESS)) {
+                return Constant.WORDING_EMAIL_SUCCESS_EN;
+            } else if (statusInput.equals(StatusEnum.FAILED)) {
+                return Constant.WORDING_EMAIL_FAILED_EN;
+            } else if (statusInput.equals(StatusEnum.PARTIALLY_SUCCESSFUL)) {
+                return Constant.WORDING_EMAIL_PARTIALLY_SUCCESSFUL_EN;
+            }
+        } else {
+            if (statusInput.equals(StatusEnum.SUCCESS)) {
+                return Constant.WORDING_EMAIL_SUCCESS_IND;
+            } else if (statusInput.equals(StatusEnum.FAILED)) {
+                return Constant.WORDING_EMAIL_FAILED_IND;
+            } else if (statusInput.equals(StatusEnum.PARTIALLY_SUCCESSFUL)) {
+                return Constant.WORDING_EMAIL_PARTIALLY_SUCCESSFUL_IND;
+            }
         }
-        return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS : Constant.WORDING_EMAIL_FAILED;
+        return null;
     }
 
     public static String typeTranslate(ActionEnum actionEnum, boolean isEng) {
@@ -97,5 +108,21 @@ public class CommonUtil {
             return DateTimeFormatter.ofPattern(pattern).format(localDate);
         }
         return null;
+    }
+
+    public static synchronized boolean isObjectEmpty(Object object) {
+        if (object == null) return true;
+        else if (object instanceof String) {
+            if (((String) object).trim().length() == 0) {
+                return true;
+            }
+        } else if (object instanceof Collection) {
+            return isCollectionEmpty((Collection<?>) object);
+        }
+        return false;
+    }
+
+    private static boolean isCollectionEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
     }
 }

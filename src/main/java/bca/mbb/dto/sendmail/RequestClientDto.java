@@ -1,4 +1,4 @@
-package bca.mbb.dto.sendMail;
+package bca.mbb.dto.sendmail;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

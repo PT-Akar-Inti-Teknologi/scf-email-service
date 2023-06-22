@@ -1,9 +1,9 @@
 package bca.mbb.adaptor;
 
 import bca.mbb.dto.ApiResponse;
-import bca.mbb.dto.sendMail.EmailCorporateDto;
-import bca.mbb.dto.sendMail.RequestBodySendEmail;
-import bca.mbb.dto.sendMail.RequestClientDto;
+import bca.mbb.dto.sendmail.EmailCorporateDto;
+import bca.mbb.dto.sendmail.RequestBodySendEmail;
+import bca.mbb.dto.sendmail.RequestClientDto;
 import bca.mbb.feign.ExternalCorporatelClient;
 import bca.mbb.feign.ExternalEmailClient;
 import bca.mbb.feign.UploadManagementClient;

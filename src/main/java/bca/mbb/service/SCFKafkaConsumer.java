@@ -1,23 +1,19 @@
 package bca.mbb.service;
 
-import bca.mbb.dto.InvoiceError;
-import bca.mbb.dto.sendMail.GroupsDto;
-import bca.mbb.mapper.FoInvoiceErrorDetailEntityMapper;
+import bca.mbb.dto.sendmail.GroupsDto;
 import bca.mbb.mapper.RequestBodySendMailMapper;
 import bca.mbb.repository.FoInvoiceErrorDetailRepository;
 import bca.mbb.repository.FoTransactionDetailRepository;
 import bca.mbb.repository.FoTransactionHeaderRepository;
 import bca.mbb.scf.avro.EmailScfData;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lib.fo.entity.FoInvoiceErrorDetailEntity;
-import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -53,45 +49,49 @@ public class SCFKafkaConsumer {
     @KafkaListener(topics = "#{'${app.kafka.topic.email}'}", groupId = "#{'${spring.kafka.consumer.group-id-email}'}", containerFactory = "emailListener")
     public void validateDoneListen(EmailScfData message) {
 
-//        if(message.getChannelId().equalsIgnoreCase(channelId)) {
-//
-            var header = foTransactionHeaderRepository.findByFoTransactionHeaderId(message.getTransactionId());
+        var header = foTransactionHeaderRepository.findByFoTransactionHeaderId(message.getTransactionId());
 
-            var foTransactionDetail = foTransactionDetailRepository.groupByProgramCodeSellerCodeBuyerCode(message.getTransactionId());
+        var headerDto = foTransactionHeaderRepository.getCounterparty(header.getFoTransactionHeaderId());
 
-            Set<String> errMsgEn = new LinkedHashSet<>();
+        var foTransactionDetail = foTransactionDetailRepository.groupByProgramCodeSellerCodeBuyerCode(message.getTransactionId());
 
-            Set<String> errMsgId = new LinkedHashSet<>();
+        var totalRecord = foTransactionHeaderRepository.getTotalRecord(header.getFoTransactionHeaderId());
 
-            var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
+        BeanUtils.copyProperties(totalRecord, headerDto, "counterpartyCode", "counterpartyName");
 
-            if (header.getStatus().equals(StatusEnum.FAILED)) {
+        Set<String> errMsgEn = new LinkedHashSet<>();
 
-                var foInvoiceErrorDetail =foInvoiceErrorDetailRepository.findByChainingId(header.getChainingId());
+        Set<String> errMsgId = new LinkedHashSet<>();
 
-                foInvoiceErrorDetail.stream().forEach(error-> {
-                    errMsgId.add(error.getErrorDescriptionInd());
-                    errMsgEn.add(error.getErrorDescriptionEng());
-                });
-            }
+        var currency = foTransactionDetailRepository.getCurrencyByFoTransactionId(header.getFoTransactionHeaderId());
 
-            var listGroup = new ArrayList<GroupsDto>();
+        if (header.getStatus().equals(StatusEnum.FAILED) && header.getTransactionName().equals("UPLOAD_INVOICE")) {
 
-            foTransactionDetail.forEach(data-> {
-                var singleGroup = new GroupsDto();
+            var foInvoiceErrorDetail =foInvoiceErrorDetailRepository.findByChainingId(header.getChainingId());
 
-                singleGroup.setProgramCode(data.getProgramCode());
-                singleGroup.setBuyerCode(data.getBuyerId());
-                singleGroup.setSellerCode(data.getSellerId());
-
-                listGroup.add(singleGroup);
+            foInvoiceErrorDetail.stream().forEach(error-> {
+                errMsgId.add(error.getErrorDescriptionInd());
+                errMsgEn.add(error.getErrorDescriptionEng());
             });
+        }
 
-            var errorDetail = FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build();
+        var listGroup = new ArrayList<GroupsDto>();
 
-            var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env);
+        foTransactionDetail.forEach(data-> {
+            var singleGroup = new GroupsDto();
 
-            emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
-//        }
+            singleGroup.setProgramCode(data.getProgramCode());
+            singleGroup.setBuyerCode(data.getBuyerId());
+            singleGroup.setSellerCode(data.getSellerId());
+
+            listGroup.add(singleGroup);
+        });
+
+        var errorDetail = FoInvoiceErrorDetailEntity.builder().errorDescriptionEng(String.join(",", errMsgEn)).errorDescriptionInd(String.join(",", errMsgId)).build();
+
+        var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env, headerDto);
+
+        emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
+
     }
 }

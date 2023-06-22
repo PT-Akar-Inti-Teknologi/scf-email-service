@@ -7,7 +7,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum TransactionPrefixEnum {
 
-    UPLOAD_INVOICE ("UPLOAD_INVOICE", "UIN");
+    UPLOAD_INVOICE ("UPLOAD_INVOICE", "UIN"),
+    PAY_INVOICE ("PAY_INVOICE", "PIN");
 
     private String transactionName;
     private String prefix;

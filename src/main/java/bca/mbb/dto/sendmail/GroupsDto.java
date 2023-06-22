@@ -1,4 +1,4 @@
-package bca.mbb.dto.sendMail;
+package bca.mbb.dto.sendmail;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
