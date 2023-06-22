@@ -33,12 +33,14 @@ public class Constant {
     public static final String FORMAT_ENTITY_DATE_TIME = "dd/MM/yyyy HH:mm:ss";
     public static final String FORMAT_ENTITY_TIME_ZONE = "Asia/Jakarta";
     public static final String IS_NULL = "null";
-    public static final String WORDING_EMAIL_SUCCESS = "Berhasil";
-    public static final String WORDING_EMAIL_FAILED = "Gagal";
+    public static final String WORDING_EMAIL_SUCCESS_IND = "Berhasil";
+    public static final String WORDING_EMAIL_FAILED_IND = "Gagal";
+    public static final String WORDING_EMAIL_PARTIALLY_SUCCESSFUL_IND = "Berhasil Sebagian";
     public static final String WORDING_EMAIL_ADD = "Tambah";
     public static final String WORDING_EMAIL_DELETE = "Hapus";
     public static final String WORDING_EMAIL_SUCCESS_EN = "Success";
     public static final String WORDING_EMAIL_FAILED_EN = "Failed";
+    public static final String WORDING_EMAIL_PARTIALLY_SUCCESSFUL_EN = "Partially Successful";
     public static final String WORDING_EMAIL_ADD_EN = "Add";
     public static final String WORDING_EMAIL_DELETE_EN = "Delete";
     public static final String PATTERN_DATE_FOUNDATION = "yyyy-MM-dd";

@@ -70,9 +70,23 @@ public class CommonUtil {
 
     public static String statusTranslate(StatusEnum statusInput, boolean isEng) {
         if (isEng) {
-            return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS_EN : Constant.WORDING_EMAIL_FAILED_EN;
+            if (statusInput.equals(StatusEnum.SUCCESS)) {
+                return Constant.WORDING_EMAIL_SUCCESS_EN;
+            } else if (statusInput.equals(StatusEnum.FAILED)) {
+                return Constant.WORDING_EMAIL_FAILED_EN;
+            } else if (statusInput.equals(StatusEnum.PARTIALLY_SUCCESSFUL)) {
+                return Constant.WORDING_EMAIL_PARTIALLY_SUCCESSFUL_EN;
+            }
+        } else {
+            if (statusInput.equals(StatusEnum.SUCCESS)) {
+                return Constant.WORDING_EMAIL_SUCCESS_IND;
+            } else if (statusInput.equals(StatusEnum.FAILED)) {
+                return Constant.WORDING_EMAIL_FAILED_IND;
+            } else if (statusInput.equals(StatusEnum.PARTIALLY_SUCCESSFUL)) {
+                return Constant.WORDING_EMAIL_PARTIALLY_SUCCESSFUL_IND;
+            }
         }
-        return statusInput.equals(StatusEnum.SUCCESS) ? Constant.WORDING_EMAIL_SUCCESS : Constant.WORDING_EMAIL_FAILED;
+        return null;
     }
 
     public static String typeTranslate(ActionEnum actionEnum, boolean isEng) {
