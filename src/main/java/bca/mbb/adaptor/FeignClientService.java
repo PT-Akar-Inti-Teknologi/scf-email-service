@@ -38,7 +38,7 @@ public class FeignClientService {
             Method method = externalClient.getClass().getDeclaredMethod(coreApiEnum.getMethodName(), RequestClientDto.class);
             return method.invoke(externalClient, requestClient);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            logger.info("exception when call:{} at time:{}",env.getProperty(coreApiEnum.getMethodName()), LocalDateTime.now());
+            logger.info("exception when call:{} at time:{}", coreApiEnum.getMethodName(), LocalDateTime.now());
             throw new GeneralException(e);
         }
     }
