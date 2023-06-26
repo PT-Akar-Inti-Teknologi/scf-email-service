@@ -32,9 +32,6 @@ import java.util.Set;
 @Slf4j
 public class SCFKafkaConsumer {
 
-    @Value("${channel-id}")
-    private String channelId;
-
     private final FoInvoiceErrorDetailRepository foInvoiceErrorDetailRepository;
     private final FoTransactionHeaderRepository foTransactionHeaderRepository;
     private final FoTransactionDetailRepository foTransactionDetailRepository;

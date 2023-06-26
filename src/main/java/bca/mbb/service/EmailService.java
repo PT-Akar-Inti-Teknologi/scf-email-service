@@ -31,10 +31,6 @@ import java.util.stream.IntStream;
 public class EmailService {
     @Value("${channel-email}") private String channelId;
 
-    private static final String MBB_SUCCESS_CODE = "SCF-00-000";
-    private static final String MBB_SUCCESS_EN = "success";
-    private static final String MBB_SUCCESS_IND = "sukses";
-
     @Autowired
     ObjectMapper objectMapper;
 
@@ -152,7 +148,7 @@ public class EmailService {
                     }
                     return null;
 
-                }).filter(stringStringMap -> stringStringMap!=null)
+                }).filter(Objects::nonNull)
                 .forEach(mapTemp -> (dataEmailBody).add(new HashMap<>(mapTemp)));
     }
 }
