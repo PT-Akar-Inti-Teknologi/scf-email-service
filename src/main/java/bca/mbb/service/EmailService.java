@@ -5,6 +5,7 @@ import bca.mbb.enums.email.EmailEnum;
 import bca.mbb.enums.email.TemplateCodeEnum;
 import bca.mbb.enums.email.TransactionPrefixEnum;
 import bca.mbb.service.helper.EmailAccountMapperService;
+import bca.mbb.util.CommonUtil;
 import bca.mbb.util.Constant;
 import bca.mbb.util.ConstantEmail;
 import com.bca.eai.email.async.EAIEmailRequest;
@@ -70,59 +71,61 @@ public class EmailService {
 
     private void mapData(List<Map<String,String>> dataMaps, RequestBodySendBodyEmail bodyEmail,  String emailBcc){
         try {
-            var timestamp = new Timestamp(System.currentTimeMillis());
+            if (!CommonUtil.isObjectEmpty(emailBcc)) {
+                var timestamp = new Timestamp(System.currentTimeMillis());
 
-            var milliseconds = timestamp.getTime();
+                var milliseconds = timestamp.getTime();
 
-            var emailIds = Constant.EMAILID + TransactionPrefixEnum.getPrefix(bodyEmail.getTransactionType()) + "-" + milliseconds;
+                var emailIds = Constant.EMAILID + TransactionPrefixEnum.getPrefix(bodyEmail.getTransactionType()) + "-" + milliseconds;
 
-            var emailDestination = EAIEmailRequest.Email.builder()
-                    .emailTo("")
-                    .emailCc("")
-                    .emailBcc(emailBcc)
-                    .emailCustomSubject(bodyEmail.getType().equals(Constant.PRINCIPAL) ? Constant.SUBJECT_PRINCIPAL : Constant.SUBJECT_COUNTERPARTY)
-                    .build();
+                var emailDestination = EAIEmailRequest.Email.builder()
+                        .emailTo("")
+                        .emailCc("")
+                        .emailBcc(emailBcc)
+                        .emailCustomSubject(bodyEmail.getType().equals(Constant.PRINCIPAL) ? Constant.SUBJECT_PRINCIPAL : Constant.SUBJECT_COUNTERPARTY)
+                        .build();
 
-            String templateCodes = null;
+                String templateCodes = null;
 
-            if (bodyEmail.getTransactionType().equals("UPLOAD_INVOICE")) {
-                 templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
-            } else {
-                templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCodePayinvoice(bodyEmail.getTransactionType(), dataMaps.get(0).get("typePayment"))).getTemplateCode();
+                if (bodyEmail.getTransactionType().equals("UPLOAD_INVOICE")) {
+                    templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
+                } else {
+                    templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCodePayinvoice(bodyEmail.getTransactionType(), dataMaps.get(0).get("typePayment"))).getTemplateCode();
+                }
+
+                var email= EAIEmailRequest.builder()
+                        .channelId(bodyEmail.getChannelId())
+                        .emailId(emailIds)
+                        .email(emailDestination)
+                        .templateCode(templateCodes)
+                        .attachments(new ArrayList<>())
+                        .parameter(IntStream.range(0, dataMaps.size())
+                                .mapToObj(index -> {
+                                    var lang = index > 0 ? "eng" : "in";
+
+                                    var principalEnumList = ConstantEmail.PRINCIPAL_LIST_UPLOAD_LIST;
+
+                                    var counterpartyEnumList = ConstantEmail.COUNTER_PARTY_LIST_UPLOAD_INVOICE;
+
+                                    if (bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)) {
+
+                                        principalEnumList = ConstantEmail.PRINCIPAL_LIST_PAY_INVOICE;
+
+                                        counterpartyEnumList = ConstantEmail.COUNTERPARTY_LIST_PAY_INVOICE;
+                                    }
+
+                                    List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? principalEnumList
+                                            : counterpartyEnumList;
+
+                                    List<HashMap<String, String>> dataEmailBody = new ArrayList<>();
+
+                                    mapDataDetailParameter(dataMaps.get(index), lang, dataEmailBody, emailEnumList);
+                                    return dataEmailBody;
+                                }).flatMap(Collection::stream).collect(Collectors.toList()))
+                        .build();
+
+                sendEmail(email);
             }
-
-            var email= EAIEmailRequest.builder()
-                    .channelId(bodyEmail.getChannelId())
-                    .emailId(emailIds)
-                    .email(emailDestination)
-                    .templateCode(templateCodes)
-                    .attachments(new ArrayList<>())
-                    .parameter(IntStream.range(0, dataMaps.size())
-                            .mapToObj(index -> {
-                                var lang = index > 0 ? "eng" : "in";
-
-                                var principalEnumList = ConstantEmail.PRINCIPAL_LIST_UPLOAD_LIST;
-
-                                var counterpartyEnumList = ConstantEmail.COUNTER_PARTY_LIST_UPLOAD_INVOICE;
-
-                                 if (bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)) {
-
-                                     principalEnumList = ConstantEmail.PRINCIPAL_LIST_PAY_INVOICE;
-
-                                     counterpartyEnumList = ConstantEmail.COUNTERPARTY_LIST_PAY_INVOICE;
-                                }
-
-                                List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? principalEnumList
-                                        : counterpartyEnumList;
-
-                                List<HashMap<String, String>> dataEmailBody = new ArrayList<>();
-
-                                mapDataDetailParameter(dataMaps.get(index), lang, dataEmailBody, emailEnumList);
-                                return dataEmailBody;
-                            }).flatMap(Collection::stream).collect(Collectors.toList()))
-                    .build();
-
-            sendEmail(email);
         } catch (Exception e ) {
             e.printStackTrace();
         }
