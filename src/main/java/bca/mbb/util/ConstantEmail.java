@@ -12,10 +12,39 @@ public class ConstantEmail {
     private ConstantEmail() {
     }
 
-    public static List<EmailEnum> PRINCIPAL_LIST = new ArrayList<>(List.of(new EmailEnum[]{
+    public static List<EmailEnum> PRINCIPAL_LIST_PAY_INVOICE = new ArrayList<>(List.of(new EmailEnum[]{
             PROGRAMCODE,
             PROGRAMNAME,
             DEALERNAME,
+            TANGGALTRANSAKSI,
+            TOTALNOMINAL,
+            TOTALRECORD,
+            KETERANGAN,
+            NOREFERENSI,
+            CURRENCY,
+    }));
+
+    public static List<EmailEnum> COUNTERPARTY_LIST_PAY_INVOICE = new ArrayList<>(List.of(new EmailEnum[]{
+            TANGGALTRANSAKSI,
+            TOTALNOMINAL,
+            TOTALSUCEEDAMOUNT,
+            TOTALSUCEEDRECORD,
+            TOTALFAILEDAMOUNT,
+            TOTALFAILEDRECORD,
+            PROGRAMCODE,
+            PROGRAMNAME,
+            DEALERNAME,
+            DEALERCODE,
+            CURRENCY,
+            KETERANGAN,
+            NOREFERENSI,
+            ACCOUNT,
+            ACCOUNTAMOUNT,
+            CREDITNOTE,
+            CREDITNOTEAMOUT
+    }));
+
+    public static List<EmailEnum> PRINCIPAL_LIST_UPLOAD_LIST = new ArrayList<>(List.of(new EmailEnum[]{
             TANGGALTRANSAKSI,
             STATUS,
             TOTALNOMINAL,
@@ -28,28 +57,15 @@ public class ConstantEmail {
             REASON
     }));
 
-    public static List<EmailEnum> COUNTERPARTY_LIST = new ArrayList<>(List.of(new EmailEnum[]{
-            STATUS,
+    public static List<EmailEnum> COUNTER_PARTY_LIST_UPLOAD_INVOICE = new ArrayList<>(List.of(new EmailEnum[]{
             CORPNAME,
             TANGGALTRANSAKSI,
             TOTALNOMINAL,
-            TOTALSUCEEDAMOUNT,
-            TOTALSUCEEDRECORD,
-            TOTALFAILEDAMOUNT,
-            TOTALFAILEDRECORD,
-            PROGRAMCODE,
-            PROGRAMNAME,
-            DEALERNAME,
-            DEALERCODE,
             TOTALRECORD,
             TIPEUPLOAD,
             CURRENCY,
             KETERANGAN,
-            NOREFERENSI,
-            ACCOUNT,
-            ACCOUNTAMOUNT,
-            CREDITNOTE,
-            CREDITNOTEAMOUT
+            NOREFERENSI
     }));
 
 

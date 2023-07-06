@@ -101,19 +101,28 @@ public class EmailService {
                             .mapToObj(index -> {
                                 var lang = index > 0 ? "eng" : "in";
 
-                                List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? ConstantEmail.PRINCIPAL_LIST
-                                        : ConstantEmail.COUNTERPARTY_LIST;
+                                var principalEnumList = ConstantEmail.PRINCIPAL_LIST_UPLOAD_LIST;
+
+                                var counterpartyEnumList = ConstantEmail.COUNTER_PARTY_LIST_UPLOAD_INVOICE;
+
+                                 if (bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)) {
+
+                                     principalEnumList = ConstantEmail.PRINCIPAL_LIST_PAY_INVOICE;
+
+                                     counterpartyEnumList = ConstantEmail.COUNTERPARTY_LIST_PAY_INVOICE;
+                                }
+
+                                List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? principalEnumList
+                                        : counterpartyEnumList;
 
                                 List<HashMap<String, String>> dataEmailBody = new ArrayList<>();
 
                                 mapDataDetailParameter(dataMaps.get(index), lang, dataEmailBody, emailEnumList);
-
                                 return dataEmailBody;
                             }).flatMap(Collection::stream).collect(Collectors.toList()))
                     .build();
 
             sendEmail(email);
-
         } catch (Exception e ) {
             e.printStackTrace();
         }
@@ -132,23 +141,33 @@ public class EmailService {
         }
     }
 
-    private void mapDataDetailParameter(Map<String, String> maps,
-                                        String language, List<HashMap<String, String>> dataEmailBody, List<EmailEnum> emailEnumList) {
+    private void mapDataDetailParameter(Map<String, String> maps, String language, List<HashMap<String, String>> dataEmailBody, List<EmailEnum> emailEnumList) {
         maps.entrySet().stream()
-                .map(entry -> {
-                    var enums = emailEnumList.stream()
-                            .filter(emailEnum ->
-                                    emailEnum.getFieldName().equals(entry.getKey())
-                            ).findFirst().orElse(null);
-                    if(enums!=null){
-                        Map<String, String> mapTemp = new HashMap<>();
+                .filter(entry -> {
+                    EmailEnum enums = emailEnumList.stream()
+                            .filter(emailEnum -> emailEnum.getFieldName().equals(entry.getKey()))
+                            .findFirst()
+                            .orElse(null);
+                    return enums != null;
+                })
+                .forEach(entry -> {
+                    EmailEnum enums = emailEnumList.stream()
+                            .filter(emailEnum -> emailEnum.getFieldName().equals(entry.getKey()))
+                            .findFirst()
+                            .orElse(null);
+                    Map<String, String> mapTemp = new HashMap<>();
+                    if(enums.getFieldValueEng().equals(enums.getFieldValueInd())){
+                        if(language.equals("in")){
+                            mapTemp.put("KEY", language.equals("in") ? enums.getFieldValueInd() : enums.getFieldValueEng());
+                            mapTemp.put("VALUE", entry.getValue());
+                            dataEmailBody.add(new HashMap<>(mapTemp));
+                        }
+                    }
+                    else{
                         mapTemp.put("KEY", language.equals("in") ? enums.getFieldValueInd() : enums.getFieldValueEng());
                         mapTemp.put("VALUE", entry.getValue());
-                        return mapTemp;
+                        dataEmailBody.add(new HashMap<>(mapTemp));
                     }
-                    return null;
-
-                }).filter(Objects::nonNull)
-                .forEach(mapTemp -> (dataEmailBody).add(new HashMap<>(mapTemp)));
+                });
     }
 }
