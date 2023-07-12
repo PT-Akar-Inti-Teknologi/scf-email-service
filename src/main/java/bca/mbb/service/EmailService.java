@@ -5,13 +5,13 @@ import bca.mbb.enums.email.EmailEnum;
 import bca.mbb.enums.email.TemplateCodeEnum;
 import bca.mbb.enums.email.TransactionPrefixEnum;
 import bca.mbb.service.helper.EmailAccountMapperService;
-import bca.mbb.util.CommonUtil;
 import bca.mbb.util.Constant;
 import bca.mbb.util.ConstantEmail;
 import com.bca.eai.email.async.EAIEmailRequest;
 import com.bca.eai.email.async.EmailAsyncService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.co.bca.annotation.EnableLogging;
+import lib.fo.enums.StatusEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class EmailService {
 
     private final EmailAccountMapperService emailAccountMapperService;
 
-    public void buildEmailGeneric(RequestBodySendBodyEmail bodyEmail, List<GroupsDto> groupsDto) {
+    public void buildEmailGeneric(RequestBodySendBodyEmail bodyEmail, List<GroupsDto> groupsDto,String status) {
 
         var emailBcc = RequestBodySendBodyEmail.builder()
                 .streamTransactionCode(bodyEmail.getStreamTransactionCode())
@@ -60,9 +60,11 @@ public class EmailService {
 
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.MBBSCF);
-
-        mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
-
+        if(bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)&&status.equals(StatusEnum.SUCCESS))
+            mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
+        else if(bodyEmail.getTransactionType().equals(Constant.UPLOAD_INVOICE)){
+            mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
+        }
         if(!CollectionUtils.isEmpty(bodyEmail.getCounterparty()) && bodyEmail.isSuccess()) {
             bodyEmail.setType(Constant.COUNTERPARTY);
             mapData(bodyEmail.getCounterparty(), bodyEmail, finalCounterpartyEmails.stream().distinct().collect(Collectors.joining(";")));
@@ -71,9 +73,6 @@ public class EmailService {
 
     private void mapData(List<Map<String,String>> dataMaps, RequestBodySendBodyEmail bodyEmail,  String emailBcc){
         try {
-            if (CommonUtil.isObjectEmpty(emailBcc))
-                return;
-
             var timestamp = new Timestamp(System.currentTimeMillis());
 
             var milliseconds = timestamp.getTime();
@@ -127,7 +126,6 @@ public class EmailService {
                     .build();
 
             sendEmail(email);
-
         } catch (Exception e ) {
             e.printStackTrace();
         }

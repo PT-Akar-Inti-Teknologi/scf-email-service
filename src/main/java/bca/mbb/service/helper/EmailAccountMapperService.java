@@ -17,11 +17,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EmailAccountMapperService {
     @Autowired
@@ -30,9 +32,12 @@ public class EmailAccountMapperService {
     private final FeignClientService feignClientService;
 
     public void getEmailPrincipalAndCounterParty(List<String> finalPrincipalEmails,List<String> finalCounterpartyEmails,
-            RequestClientDto<Object> requestClient, RequestBodySendBodyEmail bodyEmail){
+                                                 RequestClientDto<Object> requestClient, RequestBodySendBodyEmail bodyEmail){
         getGroupData(bodyEmail,requestClient);
+
+        log.info("buildEmailGeneric externalCorporate request {}" , requestClient.toString());
         var externalCorporate = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_CORPORATE, requestClient);
+        log.info("buildEmailGeneric externalCorporate response {}" , externalCorporate.toString());
 
         var responseCorporate = objectMapper.convertValue(externalCorporate.getBody(), ApiResponse.class);
         Map<String,String> mapEmails=new HashMap<>();
@@ -46,16 +51,22 @@ public class EmailAccountMapperService {
         outputSchemaCorporates.getCorporate().stream()
 //                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
                 .forEach(corporateDto -> {
+                    log.info("getEmailPrincipalAndCounterParty corporateDto {}", corporateDto );
                     var emailWithoutComma=corporateDto.getEmail().replace(";","");
+                    log.info("getEmailPrincipalAndCounterParty emailWithoutComma {}", emailWithoutComma);
                     mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
                     if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
                         principalEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
+                        log.info("getEmailPrincipalAndCounterParty principalEmails {}", principalEmails);
                     } else {
                         counterpartyEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
+                        log.info("getEmailPrincipalAndCounterParty counterpartyEmails {}", counterpartyEmails);
                     }
                 });
 
+        log.info("buildEmailGeneric externalEmailUser request {}",  requestClient);
         var externalEmailUser = (ResponseEntity) feignClientService.callRestApi(CoreApiEnum.EMAIL_USER, requestClient);
+        log.info("buildEmailGeneric externalEmailUser response {}", externalEmailUser);
 
         var responseEmailUser = objectMapper.convertValue(externalEmailUser.getBody(), ApiResponse.class);
         if (!responseEmailUser.getErrorCode().equalsIgnoreCase("MBB-00-000")){
@@ -63,11 +74,12 @@ public class EmailAccountMapperService {
         }
         var outputSchemaUser = objectMapper.convertValue(responseEmailUser.getOutputSchema(), ResponseEmailHeaderDto.class);
         var emailUser=Arrays.asList(outputSchemaUser.getEmailAddress().split(";"));
-
+        finalPrincipalEmails.addAll(principalEmails);
         emailUser.stream()
                 .filter(userChecks -> mapEmails.get(userChecks) != null)
                 .findFirst()
                 .ifPresent(userChecks -> {
+                    log.info("emailUser {} mapEmails.get(userChecks) {}", emailUser, mapEmails.get(userChecks));
                     if (mapEmails.get(userChecks).equals(Constant.PRINCIPAL)) {
                         finalPrincipalEmails.addAll(emailUser);
                     } else {
@@ -75,10 +87,14 @@ public class EmailAccountMapperService {
                     }
                 });
 
+        log.info("finalPrincipalEmails {} finalCounterpartyEmails {}", finalPrincipalEmails, finalCounterpartyEmails );
+
     }
 
     private void getGroupData(RequestBodySendBodyEmail bodyEmail,RequestClientDto<Object> requestClient){
+        log.info("Hit core get group: {}", CoreApiEnum.values() , "requestClient {}", requestClient );
         var externalGroup = feignClientService.callRestApi(CoreApiEnum.GET_GROUP, requestClient);
+        log.info("externalGroup {}", externalGroup );
 
         var responseGroup = objectMapper.convertValue(externalGroup, ApiResponse.class);
 

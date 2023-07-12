@@ -88,7 +88,7 @@ public class SCFKafkaConsumer {
 
         var requestBodySendEmail = RequestBodySendMailMapper.INSTANCE.from(header, currency, mapper, errorDetail, env, headerDto);
 
-        emailService.buildEmailGeneric(requestBodySendEmail, listGroup);
+        emailService.buildEmailGeneric(requestBodySendEmail, listGroup, header.getStatus().name());
 
     }
 }

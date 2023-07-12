@@ -97,6 +97,9 @@ public class CommonUtil {
     }
 
     public static String nominal(BigDecimal totalAmount) {
+        if (CommonUtil.isObjectEmpty(totalAmount)) {
+            return null;
+        }
         DecimalFormat df = new DecimalFormat("#,###.00");
         return df.format(totalAmount);
     }
