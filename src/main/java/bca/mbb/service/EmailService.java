@@ -60,8 +60,11 @@ public class EmailService {
 
         bodyEmail.setType(Constant.PRINCIPAL);
         bodyEmail.setChannelId(Constant.MBBSCF);
-        if(bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)&&status.equals(StatusEnum.SUCCESS))
+        log.info("bodyEmail.getTransactionType() : {}, status : {}", bodyEmail.getTransactionType(), status);
+        if(bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE) && status.equalsIgnoreCase(StatusEnum.SUCCESS.name())){
+            log.info("masuk email principal pay invoice");
             mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
+        }
         else if(bodyEmail.getTransactionType().equals(Constant.UPLOAD_INVOICE)){
             mapData(bodyEmail.getPrincipal(), bodyEmail, finalPrincipalEmails.stream().distinct().collect(Collectors.joining(";")));
         }
@@ -89,7 +92,7 @@ public class EmailService {
             String templateCodes = null;
 
             if (bodyEmail.getTransactionType().equals("UPLOAD_INVOICE")) {
-                templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
+                 templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCode(bodyEmail.getTransactionType(), dataMaps.get(0).get("status"))).getTemplateCode();
             } else {
                 templateCodes = Objects.requireNonNull(TemplateCodeEnum.getTemplateCodePayinvoice(bodyEmail.getTransactionType(), dataMaps.get(0).get("typePayment"))).getTemplateCode();
             }
@@ -108,11 +111,11 @@ public class EmailService {
 
                                 var counterpartyEnumList = ConstantEmail.COUNTER_PARTY_LIST_UPLOAD_INVOICE;
 
-                                if (bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)) {
+                                 if (bodyEmail.getTransactionType().equals(Constant.PAY_INVOICE)) {
 
-                                    principalEnumList = ConstantEmail.PRINCIPAL_LIST_PAY_INVOICE;
+                                     principalEnumList = ConstantEmail.PRINCIPAL_LIST_PAY_INVOICE;
 
-                                    counterpartyEnumList = ConstantEmail.COUNTERPARTY_LIST_PAY_INVOICE;
+                                     counterpartyEnumList = ConstantEmail.COUNTERPARTY_LIST_PAY_INVOICE;
                                 }
 
                                 List<EmailEnum> emailEnumList = bodyEmail.getType().equals(Constant.PRINCIPAL) ? principalEnumList

@@ -1,7 +1,9 @@
 package bca.mbb.util;
 
+import lib.fo.entity.FoTransactionHeaderEntity;
 import lib.fo.enums.ActionEnum;
 import lib.fo.enums.StatusEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +19,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+@Slf4j
 @Component
 public class CommonUtil {
 
@@ -68,7 +71,12 @@ public class CommonUtil {
         return formattedDateTime.replace(zoneTime[zoneTime.length-1], zoneTime[zoneTime.length-1].replace("0", ""));
     }
 
-    public static String statusTranslate(StatusEnum statusInput, boolean isEng) {
+    public static String statusTranslate(StatusEnum statusInput, boolean isEng, boolean isCounterparty) {
+        log.info("statusTranslate statusInput {} isEng", statusInput, isEng);
+
+        if (isCounterparty) {
+            return null;
+        }
         if (isEng) {
             if (statusInput.equals(StatusEnum.SUCCESS)) {
                 return Constant.WORDING_EMAIL_SUCCESS_EN;
@@ -97,7 +105,7 @@ public class CommonUtil {
     }
 
     public static String nominal(BigDecimal totalAmount) {
-        if (CommonUtil.isObjectEmpty(totalAmount)) {
+        if(CommonUtil.isObjectEmpty(totalAmount)){
             return null;
         }
         DecimalFormat df = new DecimalFormat("#,###.00");

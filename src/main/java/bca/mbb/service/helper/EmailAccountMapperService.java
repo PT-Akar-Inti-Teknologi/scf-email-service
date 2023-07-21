@@ -32,7 +32,7 @@ public class EmailAccountMapperService {
     private final FeignClientService feignClientService;
 
     public void getEmailPrincipalAndCounterParty(List<String> finalPrincipalEmails,List<String> finalCounterpartyEmails,
-                                                 RequestClientDto<Object> requestClient, RequestBodySendBodyEmail bodyEmail){
+            RequestClientDto<Object> requestClient, RequestBodySendBodyEmail bodyEmail){
         getGroupData(bodyEmail,requestClient);
 
         log.info("buildEmailGeneric externalCorporate request {}" , requestClient.toString());
@@ -51,11 +51,12 @@ public class EmailAccountMapperService {
         outputSchemaCorporates.getCorporate().stream()
 //                    .filter(corporateDto -> corporateDto.getCorporateCorpId().equalsIgnoreCase(bodyEmail.getCorpId()))
                 .forEach(corporateDto -> {
-                    log.info("getEmailPrincipalAndCounterParty corporateDto {}", corporateDto );
+
                     var emailWithoutComma=corporateDto.getEmail().replace(";","");
-                    log.info("getEmailPrincipalAndCounterParty emailWithoutComma {}", emailWithoutComma);
-                    mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
-                    if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
+
+                     mapEmails.put(emailWithoutComma, corporateDto.getPartyType());
+
+                     if (corporateDto.getPartyType().equals(Constant.PRINCIPAL)) {
                         principalEmails.addAll(Arrays.asList(corporateDto.getEmail().split(";")));
                         log.info("getEmailPrincipalAndCounterParty principalEmails {}", principalEmails);
                     } else {
@@ -75,6 +76,7 @@ public class EmailAccountMapperService {
         var outputSchemaUser = objectMapper.convertValue(responseEmailUser.getOutputSchema(), ResponseEmailHeaderDto.class);
         var emailUser=Arrays.asList(outputSchemaUser.getEmailAddress().split(";"));
         finalPrincipalEmails.addAll(principalEmails);
+        finalCounterpartyEmails.addAll(counterpartyEmails);
         emailUser.stream()
                 .filter(userChecks -> mapEmails.get(userChecks) != null)
                 .findFirst()

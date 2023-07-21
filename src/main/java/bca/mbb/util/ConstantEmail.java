@@ -25,6 +25,8 @@ public class ConstantEmail {
     }));
 
     public static List<EmailEnum> COUNTERPARTY_LIST_PAY_INVOICE = new ArrayList<>(List.of(new EmailEnum[]{
+            STATUS,
+            TOTALRECORD,
             TANGGALTRANSAKSI,
             TOTALNOMINAL,
             TOTALSUCEEDAMOUNT,

@@ -30,4 +30,6 @@ public class RequestBodySendBodyEmail {
     private String[] emailCorporates;
     private String[] emailUser;
     private String typePayment;
+    private boolean dotaaa;
+
 }
